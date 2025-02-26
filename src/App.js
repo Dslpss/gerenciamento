@@ -108,10 +108,24 @@ function AppContent() {
           salaryHistory,
         });
 
-        console.log("Salário atualizado com sucesso");
+        // Atualizar também na coleção userData para garantir compatibilidade
+        const { setDoc, doc, serverTimestamp } = require("firebase/firestore");
+        const { db } = require("./firebase/config");
+
+        await setDoc(
+          doc(db, "userData", currentUser.uid),
+          {
+            salario: newSalary,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        console.log("Salário atualizado com sucesso no Firestore");
       } catch (firebaseError) {
         console.warn("Falha ao salvar no Firebase:", firebaseError);
         console.log("Salário atualizado apenas localmente");
+        // Continuamos com o estado local atualizado mesmo com falha no Firebase
       }
     } catch (error) {
       console.error("Erro ao atualizar salário:", error);

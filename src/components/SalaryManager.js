@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import "../styles/SalaryManager.css";
 
 const SalaryManager = ({
   salary,
@@ -18,7 +19,7 @@ const SalaryManager = ({
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackType, setFeedbackType] = useState("success"); // ou "warning"
-  const [isSubmitting, setIsSubmitting] = useState(false); // Renomeado 'loading' para 'isSubmitting'
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Meses para seleção
   const months = [
@@ -79,7 +80,6 @@ const SalaryManager = ({
 
   // Função para lidar com a mudança no checkbox
   const handleApplyFutureChange = (e) => {
-    console.log("Checkbox clicado:", e.target.checked);
     setApplyFromNow(e.target.checked);
   };
 
@@ -90,7 +90,7 @@ const SalaryManager = ({
 
     if (!isNaN(parsedSalary) && parsedSalary >= 0) {
       try {
-        setIsSubmitting(true); // Usando a nova variável
+        setIsSubmitting(true);
 
         // Criar entrada do histórico
         const historyEntry = {

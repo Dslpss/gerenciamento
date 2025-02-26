@@ -123,40 +123,6 @@ export const obterDespesas = async (userId) => {
   }
 };
 
-// Funções relacionadas a salários
-export const salvarDadosSalario = async (userId, dados) => {
-  try {
-    await setDoc(doc(db, "salaries", userId), {
-      ...dados,
-      updatedAt: new Date(),
-    });
-    return dados;
-  } catch (error) {
-    console.error("Erro ao salvar dados de salário:", error);
-    throw error;
-  }
-};
-
-export const obterDadosSalario = async (userId) => {
-  try {
-    console.log("Obtendo dados de salário para usuário:", userId);
-    const docRef = doc(db, "salaries", userId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const dados = docSnap.data();
-      console.log("Dados de salário encontrados:", dados);
-      return dados;
-    } else {
-      console.log("Nenhum dado de salário encontrado");
-      return null;
-    }
-  } catch (error) {
-    console.error("Erro ao obter dados de salário:", error);
-    throw error;
-  }
-};
-
 // Sincronização entre Firebase e localStorage
 export const sincronizarDadosComFirebase = async (userId) => {
   try {
@@ -164,38 +130,6 @@ export const sincronizarDadosComFirebase = async (userId) => {
     // ...
   } catch (error) {
     console.error("Erro ao sincronizar dados:", error);
-    throw error;
-  }
-};
-
-// Verificar dados do Firestore
-export const verificarDadosFirestore = async (userId) => {
-  try {
-    console.log("Verificando dados para usuário:", userId);
-
-    // Verificar despesas usando query
-    const expensesQuery = query(
-      collection(db, "expenses"),
-      where("userId", "==", userId)
-    );
-    const expensesSnapshot = await getDocs(expensesQuery);
-
-    // Verificar salário usando getDoc para documento único
-    const salaryRef = doc(db, "salaries", userId);
-    const salarySnapshot = await getDoc(salaryRef);
-
-    const dados = {
-      expenses: expensesSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })),
-      salary: salarySnapshot.exists() ? salarySnapshot.data() : null,
-    };
-
-    console.log("Dados encontrados no Firestore:", dados);
-    return dados;
-  } catch (error) {
-    console.error("Erro ao verificar dados:", error);
     throw error;
   }
 };
@@ -258,14 +192,15 @@ export const initializeUserData = async (userId) => {
   }
 };
 
-// Função para carregar dados iniciais do usuário - VERSÃO CORRIGIDA
+// Função para carregar dados iniciais do usuário - Versão Melhorada
 export const carregarDadosIniciais = async (userId) => {
+  if (!userId) {
+    console.error("ID de usuário não fornecido para carregarDadosIniciais");
+    throw new Error("ID de usuário não fornecido");
+  }
+
   try {
     console.log("Carregando dados iniciais para o usuário:", userId);
-
-    // Verificar e inicializar dados do usuário
-    const userDocRef = doc(db, "userData", userId);
-    const userDoc = await getDoc(userDocRef);
 
     // Dados padrão a retornar caso não haja dados
     let dados = {
@@ -275,22 +210,130 @@ export const carregarDadosIniciais = async (userId) => {
       expenses: [],
     };
 
-    // Se o usuário já existir, carregamos os dados
-    if (userDoc.exists()) {
-      dados = { ...dados, ...userDoc.data() };
-      console.log("Dados do usuário encontrados:", dados);
-    } else {
-      // Criar documento de usuário caso não exista
-      await setDoc(userDocRef, {
-        lastLogin: serverTimestamp(),
-        createdAt: serverTimestamp(),
-        ...dados,
-      });
-      console.log("Documento de usuário criado com dados padrão");
+    // Tentar carregar de userData primeiro
+    try {
+      const userDataRef = doc(db, "userData", userId);
+      const userDataSnapshot = await getDoc(userDataRef);
+
+      if (userDataSnapshot.exists()) {
+        const userDataFromDb = userDataSnapshot.data();
+        console.log("Dados encontrados em userData:", userDataFromDb);
+
+        dados = {
+          ...dados,
+          salario: userDataFromDb.salario || userDataFromDb.defaultSalary || 0,
+          monthlySalaries: userDataFromDb.monthlySalaries || {},
+          salaryHistory: userDataFromDb.salaryHistory || [],
+        };
+      }
+    } catch (error) {
+      console.warn("Erro ao carregar de userData:", error.message);
     }
 
-    // Carregar despesas do usuário - serão carregadas pelo ExpenseContext
+    // Tentar carregar de salaries se não encontrou ou para complementar
+    if (dados.salario === 0) {
+      try {
+        const salaryDocRef = doc(db, "salaries", userId);
+        const salarySnapshot = await getDoc(salaryDocRef);
 
+        if (salarySnapshot.exists()) {
+          const salaryData = salarySnapshot.data();
+          console.log("Dados encontrados em salaries:", salaryData);
+
+          dados = {
+            ...dados,
+            salario: salaryData.defaultSalary || 0,
+            monthlySalaries:
+              salaryData.monthlySalaries || dados.monthlySalaries,
+            salaryHistory: salaryData.salaryHistory || dados.salaryHistory,
+          };
+        }
+      } catch (error) {
+        console.warn("Erro ao carregar de salaries:", error.message);
+      }
+    }
+
+    // Se ainda não temos dados, tentar carregar da subcoleção em users
+    if (dados.salario === 0) {
+      try {
+        const userSalaryRef = doc(db, "users", userId, "salaryData", "current");
+        const userSalarySnapshot = await getDoc(userSalaryRef);
+
+        if (userSalarySnapshot.exists()) {
+          const salaryData = userSalarySnapshot.data();
+          console.log("Dados encontrados em users/.../salaryData:", salaryData);
+
+          dados = {
+            ...dados,
+            salario: salaryData.defaultSalary || 0,
+            monthlySalaries: salaryData.monthlySalaries || {},
+            salaryHistory: salaryData.salaryHistory || [],
+          };
+        }
+      } catch (error) {
+        console.warn("Erro ao carregar da subcoleção de users:", error.message);
+      }
+    }
+
+    // Se não encontrou dados em nenhum lugar, criar estrutura inicial
+    if (
+      dados.salario === 0 &&
+      Object.keys(dados.monthlySalaries).length === 0
+    ) {
+      try {
+        console.log(
+          "Nenhum dado encontrado. Criando estrutura inicial para o usuário."
+        );
+
+        // Criar em userData
+        const userDataRef = doc(db, "userData", userId);
+        await setDoc(
+          userDataRef,
+          {
+            salario: 0,
+            monthlySalaries: {},
+            salaryHistory: [],
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        // Criar também em salaries para redundância
+        const salaryRef = doc(db, "salaries", userId);
+        await setDoc(
+          salaryRef,
+          {
+            defaultSalary: 0,
+            monthlySalaries: {},
+            salaryHistory: [],
+            createdAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        console.log("Estrutura inicial de dados criada com sucesso");
+      } catch (initError) {
+        console.error("Erro ao criar estrutura inicial:", initError);
+        // Não lançar erro aqui, apenas continuar com os valores padrão
+      }
+    }
+
+    // Registrar login
+    try {
+      const userLoginRef = doc(db, "userData", userId);
+      await setDoc(
+        userLoginRef,
+        {
+          lastLogin: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (loginError) {
+      console.warn("Erro ao registrar login:", loginError.message);
+    }
+
+    console.log("Dados carregados finais:", dados);
     return dados;
   } catch (error) {
     console.error("Erro ao carregar dados iniciais:", error);
@@ -298,59 +341,75 @@ export const carregarDadosIniciais = async (userId) => {
   }
 };
 
-// Atualizar dados do salário
+// Atualizar dados do salário - Versão melhorada
 export const atualizarDadosSalario = async (userId, dados) => {
+  if (!userId) {
+    console.error("ID de usuário não fornecido para atualizarDadosSalario");
+    throw new Error("ID de usuário não fornecido");
+  }
+
   try {
-    console.log("Atualizando dados de salário:", dados);
+    console.log(`Atualizando dados de salário para usuário ${userId}:`, dados);
 
     const salaryData = {
-      defaultSalary: dados.defaultSalary || 0,
+      defaultSalary:
+        dados.defaultSalary !== undefined ? dados.defaultSalary : 0,
       monthlySalaries: dados.monthlySalaries || {},
       salaryHistory: dados.salaryHistory || [],
-      updatedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
     };
 
-    // Tentar com documento separado no salaries
+    // Estratégia 1: Salvar em documento específico para salário
     try {
       const salaryRef = doc(db, "salaries", userId);
       await setDoc(salaryRef, salaryData, { merge: true });
-      console.log("Dados de salário atualizados em salaries");
+      console.log("Dados salvos com sucesso em salaries/");
     } catch (error) {
-      console.warn("Erro ao atualizar em salaries:", error.message);
+      console.warn("Falha ao salvar em salaries/:", error);
     }
 
-    // Tentar com subcoleção dentro de users
-    try {
-      const userSalaryRef = doc(db, "users", userId, "salaryData", "current");
-      await setDoc(userSalaryRef, salaryData, { merge: true });
-      console.log("Dados de salário atualizados na subcoleção");
-    } catch (error) {
-      console.warn("Erro ao atualizar na subcoleção:", error.message);
-    }
-
-    // Tentar com userData
+    // Estratégia 2: Salvar em userData
     try {
       const userDataRef = doc(db, "userData", userId);
       await setDoc(
         userDataRef,
         {
-          salary: dados.defaultSalary || 0,
+          salario: dados.defaultSalary,
           monthlySalaries: dados.monthlySalaries || {},
           salaryHistory: dados.salaryHistory || [],
-          updatedAt: new Date().toISOString(),
+          updatedAt: serverTimestamp(),
         },
         { merge: true }
       );
-      console.log("Dados de salário atualizados em userData");
+      console.log("Dados salvos com sucesso em userData/");
     } catch (error) {
-      console.warn("Erro ao atualizar em userData:", error.message);
+      console.warn("Falha ao salvar em userData/:", error);
     }
 
+    // Estratégia 3: Salvar em users/userId/salaryData
+    try {
+      const userSalaryRef = doc(db, "users", userId, "salaryData", "current");
+      await setDoc(
+        userSalaryRef,
+        {
+          ...salaryData,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+      console.log("Dados salvos com sucesso em users/.../salaryData/");
+    } catch (error) {
+      console.warn("Falha ao salvar em users/.../salaryData/:", error);
+    }
+
+    console.log(
+      "Dados de salário atualizados com sucesso (pelo menos uma estratégia funcionou)"
+    );
     return true;
   } catch (error) {
     console.error("Erro ao atualizar dados de salário:", error);
 
-    // Salvar no localStorage como backup
+    // Salvar em localStorage como backup
     try {
       localStorage.setItem("salary", JSON.stringify(dados.defaultSalary || 0));
       localStorage.setItem(
@@ -361,9 +420,9 @@ export const atualizarDadosSalario = async (userId, dados) => {
         "salaryHistory",
         JSON.stringify(dados.salaryHistory || [])
       );
-      console.log("Dados de salário salvos no localStorage como backup");
+      console.log("Dados salvos no localStorage como fallback");
     } catch (storageError) {
-      console.warn("Falha também ao salvar no localStorage:", storageError);
+      console.error("Falha também ao salvar no localStorage:", storageError);
     }
 
     throw error;
