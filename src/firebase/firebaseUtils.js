@@ -10,6 +10,8 @@ import {
   query,
   where,
   setDoc,
+  writeBatch,
+  serverTimestamp,
 } from "firebase/firestore";
 import {
   createUserWithEmailAndPassword,
@@ -199,17 +201,22 @@ export const verificarDadosFirestore = async (userId) => {
 };
 
 // Salvar despesa no Firestore
-export const salvarDespesaFirestore = async (despesa, userId) => {
+export const salvarDespesaFirestore = async (expense, userId) => {
   try {
-    const despesaRef = await addDoc(collection(db, "expenses"), {
-      ...despesa,
-      userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    // Referência à coleção de despesas do usuário
+    const expensesRef = collection(db, "users", userId, "expenses");
 
-    console.log("Despesa salva com sucesso:", despesaRef.id);
-    return { id: despesaRef.id, ...despesa };
+    // Dados da despesa com timestamp
+    const expenseData = {
+      ...expense,
+      createdAt: serverTimestamp(),
+      userId,
+    };
+
+    // Adicionar à coleção
+    const docRef = await addDoc(expensesRef, expenseData);
+    console.log("Despesa salva com sucesso - ID:", docRef.id);
+    return docRef;
   } catch (error) {
     console.error("Erro ao salvar despesa:", error);
     throw error;
@@ -254,89 +261,37 @@ export const initializeUserData = async (userId) => {
 // Função para carregar dados iniciais do usuário - VERSÃO CORRIGIDA
 export const carregarDadosIniciais = async (userId) => {
   try {
-    console.log("Iniciando carregamento de dados para usuário:", userId);
+    console.log("Carregando dados iniciais para o usuário:", userId);
 
-    // Tentar carregar dos dados do usuário primeiro
-    const userDataRef = doc(db, "userData", userId);
-    const userDataSnap = await getDoc(userDataRef);
+    // Verificar e inicializar dados do usuário
+    const userDocRef = doc(db, "userData", userId);
+    const userDoc = await getDoc(userDocRef);
 
-    let dadosUsuario = {
-      salary: 0,
+    // Dados padrão a retornar caso não haja dados
+    let dados = {
+      salario: 0,
       monthlySalaries: {},
       salaryHistory: [],
+      expenses: [],
     };
 
-    // Se tiver dados em userData, use-os
-    if (userDataSnap.exists()) {
-      const userData = userDataSnap.data();
-      dadosUsuario = {
-        salary: userData.salary || 0,
-        monthlySalaries: userData.monthlySalaries || {},
-        salaryHistory: userData.salaryHistory || [],
-      };
-      console.log("Dados do usuário encontrados em userData:", dadosUsuario);
-    }
-    // Se não, tente carregar do salaries
-    else {
-      const salaryRef = doc(db, "salaries", userId);
-      const salarySnap = await getDoc(salaryRef);
-
-      if (salarySnap.exists()) {
-        const salaryData = salarySnap.data();
-        dadosUsuario = {
-          salary: salaryData.defaultSalary || 0,
-          monthlySalaries: salaryData.monthlySalaries || {},
-          salaryHistory: salaryData.salaryHistory || [],
-        };
-        console.log("Dados do usuário encontrados em salaries:", dadosUsuario);
-      } else {
-        console.log("Nenhum dado encontrado, inicializando dados do usuário");
-        await initializeUserData(userId);
-      }
+    // Se o usuário já existir, carregamos os dados
+    if (userDoc.exists()) {
+      dados = { ...dados, ...userDoc.data() };
+      console.log("Dados do usuário encontrados:", dados);
+    } else {
+      // Criar documento de usuário caso não exista
+      await setDoc(userDocRef, {
+        lastLogin: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        ...dados,
+      });
+      console.log("Documento de usuário criado com dados padrão");
     }
 
-    // Carregar despesas - tenta primeiro na subcoleção
-    let expenses = [];
-    try {
-      const expensesRef = collection(db, "users", userId, "expenses");
-      const expensesSnap = await getDocs(expensesRef);
+    // Carregar despesas do usuário - serão carregadas pelo ExpenseContext
 
-      if (!expensesSnap.empty) {
-        expenses = expensesSnap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        console.log("Despesas encontradas na subcoleção:", expenses.length);
-      } else {
-        // Se não houver na subcoleção, busca na coleção principal
-        const expensesQuery = query(
-          collection(db, "expenses"),
-          where("userId", "==", userId)
-        );
-        const legacyExpensesSnap = await getDocs(expensesQuery);
-
-        expenses = legacyExpensesSnap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        console.log(
-          "Despesas encontradas na coleção principal:",
-          expenses.length
-        );
-      }
-    } catch (error) {
-      console.error("Erro ao carregar despesas:", error);
-    }
-
-    const dadosCarregados = {
-      salario: dadosUsuario.salary,
-      monthlySalaries: dadosUsuario.monthlySalaries,
-      salaryHistory: dadosUsuario.salaryHistory,
-      expenses,
-    };
-
-    console.log("Dados carregados com sucesso:", dadosCarregados);
-    return dadosCarregados;
+    return dados;
   } catch (error) {
     console.error("Erro ao carregar dados iniciais:", error);
     throw error;
@@ -415,95 +370,30 @@ export const atualizarDadosSalario = async (userId, dados) => {
   }
 };
 
-// Função para limpar todos os dados do usuário
+// Limpar todos os dados do usuário
 export const limparTodosDados = async (userId) => {
   try {
-    if (!userId) throw new Error("Usuário não autenticado");
+    const batch = writeBatch(db);
 
-    console.log("Iniciando limpeza de todos os dados para usuário:", userId);
+    // 1. Apagar documento de usuário
+    const userDocRef = doc(db, "userData", userId);
+    batch.delete(userDocRef);
 
-    // Arrays para armazenar todas as promessas
-    const batchPromises = [];
+    // 2. Apagar todas as despesas do usuário
+    const expensesRef = collection(db, "users", userId, "expenses");
+    const expensesSnapshot = await getDocs(expensesRef);
 
-    // 1. Limpar coleção principal de despesas
-    try {
-      const expensesQuery = query(
-        collection(db, "expenses"),
-        where("userId", "==", userId)
-      );
-      const expensesSnap = await getDocs(expensesQuery);
+    expensesSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
 
-      if (!expensesSnap.empty) {
-        console.log(
-          `Excluindo ${expensesSnap.size} despesas da coleção principal`
-        );
-        expensesSnap.forEach((doc) => {
-          batchPromises.push(deleteDoc(doc.ref));
-        });
-      }
-    } catch (error) {
-      console.warn("Erro ao excluir despesas da coleção principal:", error);
-    }
+    // Executar todas as operações em lote
+    await batch.commit();
 
-    // 2. Limpar subcoleção de despesas
-    try {
-      const userExpensesRef = collection(db, "users", userId, "expenses");
-      const userExpensesSnap = await getDocs(userExpensesRef);
-
-      if (!userExpensesSnap.empty) {
-        console.log(
-          `Excluindo ${userExpensesSnap.size} despesas da subcoleção`
-        );
-        userExpensesSnap.forEach((doc) => {
-          batchPromises.push(deleteDoc(doc.ref));
-        });
-      }
-    } catch (error) {
-      console.warn("Erro ao excluir despesas da subcoleção:", error);
-    }
-
-    // 3. Resetar documentos de usuário
-    const resetData = {
-      defaultSalary: 0,
-      salary: 0,
-      monthlySalaries: {},
-      salaryHistory: [],
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Tentar resetar os documentos em vez de excluí-los
-    try {
-      const userDataRef = doc(db, "userData", userId);
-      batchPromises.push(setDoc(userDataRef, resetData, { merge: true }));
-    } catch (error) {
-      console.warn("Erro ao resetar dados de usuário:", error);
-    }
-
-    try {
-      const salaryRef = doc(db, "salaries", userId);
-      batchPromises.push(setDoc(salaryRef, resetData, { merge: true }));
-    } catch (error) {
-      console.warn("Erro ao resetar dados de salário:", error);
-    }
-
-    // Executar todas as operações em paralelo
-    if (batchPromises.length > 0) {
-      await Promise.allSettled(batchPromises);
-      console.log(`${batchPromises.length} operações de limpeza concluídas`);
-    } else {
-      console.log("Nenhum dado encontrado para limpar");
-    }
-
-    // Limpar localStorage também
-    localStorage.removeItem("expenses");
-    localStorage.removeItem("salary");
-    localStorage.removeItem("monthlySalaries");
-    localStorage.removeItem("salaryHistory");
-
-    console.log("Todos os dados foram limpos com sucesso!");
+    console.log("Todos os dados foram limpos com sucesso");
     return true;
   } catch (error) {
-    console.error("Erro ao limpar todos os dados:", error);
+    console.error("Erro ao limpar dados:", error);
     throw error;
   }
 };

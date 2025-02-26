@@ -12,17 +12,19 @@ const ExpenseList = ({ onEdit }) => {
   // Verificar e corrigir IDs duplicados
   const uniqueExpenses = [];
   const idSet = new Set();
-  
+
   // Filtrar para garantir IDs únicos
-  sortedExpenses.forEach(expense => {
+  sortedExpenses.forEach((expense) => {
     // Se o ID não existir ou já estiver no conjunto, gere um novo ID
     if (!expense.id || idSet.has(expense.id)) {
       expense = {
         ...expense,
-        id: `${expense.id || ''}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        id: `${expense.id || ""}_${Date.now()}_${Math.random()
+          .toString(36)
+          .substr(2, 9)}`,
       };
     }
-    
+
     idSet.add(expense.id);
     uniqueExpenses.push(expense);
   });

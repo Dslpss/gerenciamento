@@ -25,6 +25,10 @@ export const ExpenseProvider = ({ children }) => {
 
     if (currentUser) {
       try {
+        console.log(
+          "Iniciando carregamento de despesas do usuário:",
+          currentUser.uid
+        );
         // Referência à subcoleção de despesas do usuário
         const expensesRef = collection(
           db, // Usando a referência correta ao db
@@ -36,21 +40,37 @@ export const ExpenseProvider = ({ children }) => {
         unsubscribe = onSnapshot(
           expensesRef,
           (snapshot) => {
-            const expenseData = snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
+            const expenseData = snapshot.docs.map((doc) => {
+              const data = doc.data();
+              // Garantir que as despesas possuam todos os campos necessários
+              return {
+                id: doc.id,
+                description: data.description || "",
+                amount: data.amount || 0,
+                date: data.date || new Date().toISOString().split("T")[0],
+                category: data.category || "Outros",
+                createdAt: data.createdAt
+                  ? data.createdAt.toDate().toISOString()
+                  : new Date().toISOString(),
+                ...data,
+              };
+            });
+
+            console.log(
+              "Despesas carregadas do Firestore:",
+              expenseData.length
+            );
             setExpenses(expenseData);
             setLastUpdate(Date.now());
             setLoading(false);
           },
           (error) => {
-            console.error("Erro ao carregar despesas:", error);
+            console.error("Erro ao carregar despesas do Firestore:", error);
             setLoading(false);
           }
         );
       } catch (error) {
-        console.error("Erro ao configurar listener:", error);
+        console.error("Erro ao configurar listener para Firestore:", error);
         setLoading(false);
       }
     } else {
@@ -72,20 +92,22 @@ export const ExpenseProvider = ({ children }) => {
         "expenses"
       );
 
-      // Gerar um ID temporário único para uso local
-      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-      // Adicionar timestamp do servidor para garantir consistência
+      // Dados com timestamp do servidor para melhor consistência
       const newExpenseData = {
         ...expenseData,
         createdAt: serverTimestamp(),
         userId: currentUser.uid,
-        // Não incluir o tempId aqui - deixamos o Firestore gerar o ID
+        // Adicionar campos que garantem persistência adequada
+        date: expenseData.date,
+        amount: Number(expenseData.amount), // Garantir que seja número
+        description: expenseData.description || "",
+        category: expenseData.category || "Outros",
       };
 
       const docRef = await addDoc(expensesRef, newExpenseData);
+      console.log("Despesa salva no Firestore com ID:", docRef.id);
 
-      // Atualizar o estado local imediatamente para feedback instantâneo
+      // Atualizar estado local imediatamente para feedback instantâneo
       const newExpense = {
         id: docRef.id, // Usar o ID gerado pelo Firestore
         ...newExpenseData,

@@ -38,14 +38,17 @@ function AppContent() {
       if (!currentUser) return;
 
       try {
+        console.log("Iniciando carregamento de dados para", currentUser.email);
         const dados = await carregarDadosIniciais(currentUser.uid);
 
         if (dados.salario !== undefined) {
           setSalary(dados.salario);
+          console.log("Salário carregado:", dados.salario);
         }
 
         setMonthlySalaries(dados.monthlySalaries || {});
         setSalaryHistory(dados.salaryHistory || []);
+        console.log("Dados de salário carregados com sucesso");
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
       }

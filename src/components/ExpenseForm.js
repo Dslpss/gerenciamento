@@ -101,17 +101,25 @@ const ExpenseForm = ({ editingExpense, onClose }) => {
     }
 
     try {
+      // Garantir que os dados sejam formatados corretamente
       const expenseData = {
         description: formData.description.trim(),
         amount: parseFloat(formData.amount),
         date: formData.date,
         category: formData.category,
+        // Adicionar dados adicionais úteis
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
+
+      console.log("Salvando despesa:", expenseData);
 
       if (editingExpense && editingExpense.id) {
         await updateExpense(editingExpense.id, expenseData);
+        console.log("Despesa atualizada com sucesso!");
       } else {
         await addExpense(expenseData);
+        console.log("Nova despesa adicionada com sucesso!");
       }
 
       resetForm();
@@ -120,7 +128,7 @@ const ExpenseForm = ({ editingExpense, onClose }) => {
       console.error("Erro ao submeter formulário:", error);
       setErrors((prev) => ({
         ...prev,
-        form: "Erro ao salvar. Tente novamente.",
+        form: `Erro ao salvar: ${error.message || "Tente novamente."}`,
       }));
     }
   };
