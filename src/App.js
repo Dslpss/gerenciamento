@@ -6,9 +6,19 @@ import ExpenseFilter from "./components/ExpenseFilter";
 import SalaryManager from "./components/SalaryManager";
 import AnnualReport from "./components/AnnualReport";
 import DataManager from "./components/DataManager";
-import { loadFromLocalStorage, saveToLocalStorage } from "./utils/storage";
+import { saveToLocalStorage } from "./utils/storage";
+import Navbar from "./components/Navbar";
+import { createSafeExpense } from "./utils/dataCleaner";
+import { useAuth } from "./contexts/AuthContext";
+import AuthScreen from "./components/AuthScreen";
+import {
+  salvarDespesaFirestore,
+  atualizarDadosSalario,
+  carregarDadosIniciais,
+} from "./firebase/firebaseUtils";
 
 function App() {
+  const { currentUser } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [editingExpense, setEditingExpense] = useState(null);
   const [filters, setFilters] = useState({
@@ -18,46 +28,93 @@ function App() {
   });
   const [salary, setSalary] = useState(0);
   const [monthlySalaries, setMonthlySalaries] = useState({});
-  const [showAnnualReport, setShowAnnualReport] = useState(false);
   const [salaryHistory, setSalaryHistory] = useState([]);
-  const [showDataManager, setShowDataManager] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Carregar dados do localStorage na inicialização
   useEffect(() => {
-    const savedExpenses = loadFromLocalStorage("expenses", []);
-    const savedSalary = loadFromLocalStorage("salary", 0);
-    const savedMonthlySalaries = loadFromLocalStorage("monthlySalaries", {});
-    const savedSalaryHistory = loadFromLocalStorage("salaryHistory", []);
+    const carregarDados = async () => {
+      if (!currentUser) return;
 
-    setExpenses(savedExpenses);
-    setSalary(savedSalary);
-    setMonthlySalaries(savedMonthlySalaries);
-    setSalaryHistory(savedSalaryHistory);
-  }, []);
+      try {
+        const dados = await carregarDadosIniciais(currentUser.uid);
 
-  // Salvar gastos no localStorage quando alterados
+        if (dados.salario !== undefined) {
+          setSalary(dados.salario);
+        }
+
+        setMonthlySalaries(dados.monthlySalaries || {});
+        setSalaryHistory(dados.salaryHistory || []);
+        setExpenses(dados.expenses || []);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
+    };
+
+    carregarDados();
+  }, [currentUser]);
+
+  // Salvar dados quando alterados
   useEffect(() => {
-    saveToLocalStorage("expenses", expenses);
-  }, [expenses]);
+    if (!currentUser) return; // Não salvar se não houver usuário
 
-  // Salvar salário no localStorage quando alterado
+    try {
+      console.log("Salvando expenses:", expenses);
+      saveToLocalStorage("expenses", expenses);
+    } catch (error) {
+      console.error("Erro ao salvar expenses:", error);
+    }
+  }, [expenses, currentUser]);
+
   useEffect(() => {
-    saveToLocalStorage("salary", salary);
+    try {
+      console.log("Salvando salary:", salary);
+      saveToLocalStorage("salary", salary);
+    } catch (error) {
+      console.error("Erro ao salvar salary:", error);
+    }
   }, [salary]);
 
-  // Salvar salários mensais no localStorage quando alterados
   useEffect(() => {
-    saveToLocalStorage("monthlySalaries", monthlySalaries);
+    try {
+      console.log("Salvando monthlySalaries:", monthlySalaries);
+      saveToLocalStorage("monthlySalaries", monthlySalaries);
+    } catch (error) {
+      console.error("Erro ao salvar monthlySalaries:", error);
+    }
   }, [monthlySalaries]);
 
-  // Salvar histórico de salário
   useEffect(() => {
-    saveToLocalStorage("salaryHistory", salaryHistory);
+    try {
+      console.log("Salvando salaryHistory:", salaryHistory);
+      saveToLocalStorage("salaryHistory", salaryHistory);
+    } catch (error) {
+      console.error("Erro ao salvar salaryHistory:", error);
+    }
   }, [salaryHistory]);
 
   // Atualizar o salário padrão
-  const updateSalary = (newSalary) => {
-    setSalary(newSalary);
+  const updateSalary = async (newSalary) => {
+    try {
+      if (!currentUser) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      console.log("Atualizando salário para:", newSalary);
+
+      // Atualizar no Firestore
+      await atualizarDadosSalario(currentUser.uid, {
+        defaultSalary: newSalary,
+        monthlySalaries,
+        salaryHistory,
+      });
+
+      // Atualizar estado local
+      setSalary(newSalary);
+
+      console.log("Salário atualizado com sucesso");
+    } catch (error) {
+      console.error("Erro ao atualizar salário:", error);
+    }
   };
 
   // Atualizar um salário mensal específico
@@ -80,23 +137,45 @@ function App() {
     return monthlySalaries[key] || salary;
   };
 
-  // Adicionar um novo gasto
-  const addExpense = (expense) => {
-    const newExpense = {
-      ...expense,
-      id: Date.now().toString(),
-      date: new Date(expense.date).toISOString(),
-    };
-    setExpenses([...expenses, newExpense]);
+  // Adicionar um novo gasto com validação
+  const addExpense = async (expense) => {
+    try {
+      if (!currentUser) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const newExpense = createSafeExpense({
+        ...expense,
+        id: Date.now().toString(),
+      });
+
+      // Salvar no Firestore
+      await salvarDespesaFirestore(newExpense, currentUser.uid);
+
+      // Atualizar estado local
+      setExpenses((prev) => [...prev, newExpense]);
+
+      console.log("Despesa salva com sucesso");
+    } catch (error) {
+      console.error("Erro ao adicionar despesa:", error);
+    }
   };
 
-  // Atualizar um gasto existente
+  // Atualizar um gasto existente com validação
   const updateExpense = (updatedExpense) => {
-    const updatedExpenses = expenses.map((expense) =>
-      expense.id === updatedExpense.id ? updatedExpense : expense
-    );
-    setExpenses(updatedExpenses);
-    setEditingExpense(null);
+    try {
+      // Criar um objeto de despesa seguro com valores validados
+      const safeExpense = createSafeExpense(updatedExpense);
+
+      const updatedExpenses = expenses.map((expense) =>
+        expense.id === updatedExpense.id ? safeExpense : expense
+      );
+
+      setExpenses(updatedExpenses);
+      setEditingExpense(null);
+    } catch (error) {
+      console.error("Erro ao atualizar despesa:", error);
+    }
   };
 
   // Remover um gasto
@@ -134,84 +213,104 @@ function App() {
     return salary;
   };
 
-  // Alternar exibição do relatório anual
-  const toggleAnnualReport = () => {
-    setShowAnnualReport(!showAnnualReport);
-  };
-
-  return (
-    <div className="container">
-      <h1>Gerenciamento de Gastos</h1>
-
-      <div className="card">
-        <SalaryManager
-          salary={salary}
-          monthlySalaries={monthlySalaries}
-          salaryHistory={salaryHistory}
-          updateSalary={updateSalary}
-          updateMonthlySalary={updateMonthlySalary}
-          addSalaryHistoryEntry={addSalaryHistoryEntry}
-        />
-        <div className="report-actions">
-          <button
-            type="button"
-            onClick={toggleAnnualReport}
-            className="report-button">
-            {showAnnualReport
-              ? "Voltar ao Gerenciamento"
-              : "Ver Relatório Anual"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowDataManager(!showDataManager)}
-            className={showDataManager ? "secondary" : "data-button"}>
-            {showDataManager ? "Ocultar" : "Gerenciar"} Dados
-          </button>
-        </div>
-
-        {showDataManager && <DataManager />}
-      </div>
-
-      {showAnnualReport ? (
-        <div className="card">
-          <AnnualReport
-            expenses={expenses}
-            monthlySalaries={monthlySalaries}
-            defaultSalary={salary}
-          />
-        </div>
-      ) : (
-        <>
-          <div className="card">
-            <ExpenseForm
-              addExpense={addExpense}
-              editingExpense={editingExpense}
-              updateExpense={updateExpense}
-            />
-          </div>
-
-          <div className="card">
-            <ExpenseFilter filters={filters} setFilters={setFilters} />
-          </div>
-
-          <div className="card">
+  const renderContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return (
+          <div className="page-content">
             <ExpenseSummary
               expenses={filteredExpenses}
               salary={getApplicableSalary()}
-              isMonthlyView={isViewingMonthData}
+              isMonthlyView={true}
             />
+            <div className="recent-expenses-section">
+              <ExpenseList
+                expenses={filteredExpenses.slice(0, 5)}
+                onDelete={deleteExpense}
+                onEdit={startEditExpense}
+              />
+            </div>
           </div>
+        );
 
-          <div className="card">
+      case "expenses":
+        return (
+          <div className="page-content">
+            <ExpenseFilter filters={filters} setFilters={setFilters} />
             <ExpenseList
               expenses={filteredExpenses}
               onDelete={deleteExpense}
               onEdit={startEditExpense}
             />
           </div>
-        </>
+        );
+
+      case "reports":
+        return (
+          <div className="page-content">
+            <AnnualReport
+              expenses={expenses}
+              monthlySalaries={monthlySalaries}
+              defaultSalary={salary}
+            />
+          </div>
+        );
+
+      case "settings":
+        return (
+          <div className="page-content">
+            <SalaryManager
+              salary={salary}
+              monthlySalaries={monthlySalaries}
+              salaryHistory={salaryHistory}
+              updateSalary={updateSalary}
+              updateMonthlySalary={updateMonthlySalary}
+              addSalaryHistoryEntry={addSalaryHistoryEntry}
+            />
+            <DataManager />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // Se não houver usuário autenticado, mostra a tela de autenticação
+  if (!currentUser) {
+    return (
+      <AuthScreen onLoginSuccess={() => console.log("Usuário autenticado")} />
+    );
+  }
+
+  return (
+    <div className="app-container">
+      <div className="app-header">
+        <h1>Gerenciamento</h1>
+      </div>
+
+      <main className="main-content">
+        {editingExpense ? (
+          <div className="modal">
+            <ExpenseForm
+              addExpense={addExpense}
+              editingExpense={editingExpense}
+              updateExpense={updateExpense}
+              onClose={() => setEditingExpense(null)}
+            />
+          </div>
+        ) : (
+          renderContent()
+        )}
+      </main>
+
+      {activeTab === "expenses" && !editingExpense && (
+        <button className="fab" onClick={() => setEditingExpense({})}>
+          +
+        </button>
       )}
+
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   );
 }

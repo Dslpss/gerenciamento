@@ -3,7 +3,7 @@
 /.pnp
 .pnp.js
 
-# Arquivos de compilação
+# Builds
 /build
 /dist
 
@@ -13,6 +13,14 @@
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+
+# Firebase
+.firebase/
+
+# Netlify
+.netlify/
+netlify/functions/**/*.js
 
 # Logs
 npm-debug.log*

@@ -1,0 +1,34 @@
+.slide-up {
+  animation: slideUp 0.3s ease forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.scale-in {
+  animation: scaleIn 0.2s ease forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.page-transition {
+  transition: transform 0.3s ease;
+}
+
+.page-transition.slide-left {
+  transform: translateX(-100%);
+}
+
+.page-transition.slide-right {
+  transform: translateX(100%);
+}

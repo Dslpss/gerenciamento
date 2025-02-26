@@ -14,24 +14,43 @@ export const isLocalStorageAvailable = () => {
   }
 };
 
-// Salva dados no localStorage com tratamento de erros
-export const saveToLocalStorage = (key, data) => {
+// Função para salvar dados no localStorage
+export const saveToLocalStorage = (key, value) => {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
-    return true;
-  } catch (error) {
-    console.error(`Erro ao salvar ${key} no localStorage:`, error);
-    return false;
+    console.log(`Salvando ${key}:`, value);
+    // Garantir que números sejam salvos como números
+    const valueToSave = typeof value === "number" ? Number(value) : value;
+    const serializedState = JSON.stringify(valueToSave);
+    localStorage.setItem(key, serializedState);
+    console.log(`${key} salvo com sucesso:`, localStorage.getItem(key));
+  } catch (err) {
+    console.error(`Erro ao salvar ${key} no localStorage:`, err);
   }
 };
 
-// Carrega dados do localStorage com tratamento de erros
-export const loadFromLocalStorage = (key, defaultValue = null) => {
+// Função para carregar dados do localStorage
+export const loadFromLocalStorage = (key, defaultValue) => {
   try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : defaultValue;
-  } catch (error) {
-    console.error(`Erro ao carregar ${key} do localStorage:`, error);
+    console.log(`Carregando ${key}...`);
+    const serializedState = localStorage.getItem(key);
+
+    if (serializedState === null) {
+      console.log(`${key} não encontrado, usando valor padrão:`, defaultValue);
+      return defaultValue;
+    }
+
+    const parsedValue = JSON.parse(serializedState);
+
+    // Garantir que números sejam retornados como números
+    if (typeof defaultValue === "number") {
+      const numValue = Number(parsedValue);
+      return isNaN(numValue) ? defaultValue : numValue;
+    }
+
+    console.log(`${key} carregado:`, parsedValue);
+    return parsedValue;
+  } catch (err) {
+    console.error(`Erro ao carregar ${key} do localStorage:`, err);
     return defaultValue;
   }
 };

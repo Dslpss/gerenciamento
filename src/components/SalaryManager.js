@@ -15,6 +15,10 @@ const SalaryManager = ({
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [increaseReason, setIncreaseReason] = useState("");
   const [applyFromNow, setApplyFromNow] = useState(true);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackType, setFeedbackType] = useState("success"); // ou "warning"
+  const [isSubmitting, setIsSubmitting] = useState(false); // Renomeado 'loading' para 'isSubmitting'
 
   // Meses para seleção
   const months = [
@@ -32,10 +36,9 @@ const SalaryManager = ({
     { value: 12, label: "Dezembro" },
   ];
 
-  // Anos disponíveis (atual e 2 anteriores)
+  // Anos disponíveis (atual e anteriores/posteriores)
   const currentYear = new Date().getFullYear();
   const years = [
-    currentYear,
     currentYear + 1,
     currentYear,
     currentYear - 1,
@@ -46,9 +49,10 @@ const SalaryManager = ({
   const getMonthlySalary = useCallback(
     (month, year) => {
       const key = `${year}-${month}`;
-      return monthlySalaries[key] || 0;
+      const monthlySalary = monthlySalaries[key];
+      return monthlySalary !== undefined ? monthlySalary : salary;
     },
-    [monthlySalaries]
+    [monthlySalaries, salary]
   );
 
   useEffect(() => {
@@ -57,83 +61,123 @@ const SalaryManager = ({
     setSalaryInput(monthlySalaryValue || salary || "");
   }, [selectedMonth, selectedYear, salary, getMonthlySalary]);
 
+  // Atualizar o estado local quando o salário muda
+  useEffect(() => {
+    setSalaryInput(salary || "");
+  }, [salary]);
+
+  // Função para mostrar feedback temporário
+  const showTemporaryFeedback = (message, type = "success") => {
+    setFeedbackMessage(message);
+    setFeedbackType(type);
+    setShowFeedback(true);
+
+    setTimeout(() => {
+      setShowFeedback(false);
+    }, 3000); // feedback desaparece após 3 segundos
+  };
+
+  // Função para lidar com a mudança no checkbox
+  const handleApplyFutureChange = (e) => {
+    console.log("Checkbox clicado:", e.target.checked);
+    setApplyFromNow(e.target.checked);
+  };
+
   // Lidar com envio do formulário de salário
-  const handleSalarySubmit = (e) => {
+  const handleSalarySubmit = async (e) => {
     e.preventDefault();
     const parsedSalary = parseFloat(salaryInput);
 
     if (!isNaN(parsedSalary) && parsedSalary >= 0) {
-      // Registrar o histórico de alteração salarial
-      const previousValue =
-        getMonthlySalary(selectedMonth, selectedYear) || salary;
-      const isIncrease = parsedSalary > previousValue;
-      const changeType = isIncrease
-        ? "Aumento"
-        : parsedSalary < previousValue
-        ? "Redução"
-        : "Ajuste";
+      try {
+        setIsSubmitting(true); // Usando a nova variável
 
-      // Adicionar ao histórico
-      const historyEntry = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        previousValue: previousValue,
-        newValue: parsedSalary,
-        month: selectedMonth,
-        year: selectedYear,
-        type: changeType,
-        reason: increaseReason || "Atualização de salário",
-        percentChange:
-          previousValue > 0
-            ? ((parsedSalary - previousValue) / previousValue) * 100
-            : 0,
-      };
+        // Criar entrada do histórico
+        const historyEntry = {
+          id: Date.now().toString(),
+          date: new Date().toISOString(),
+          previousValue: salary,
+          newValue: parsedSalary,
+          type: parsedSalary > salary ? "Aumento" : "Ajuste",
+          reason: increaseReason || "Atualização de salário",
+          percentChange:
+            salary > 0 ? ((parsedSalary - salary) / salary) * 100 : 0,
+        };
 
-      addSalaryHistoryEntry(historyEntry);
+        // Atualizar salário (isso vai salvar no Firestore)
+        await updateSalary(parsedSalary);
 
-      // Atualiza o salário padrão para futuros meses
-      updateSalary(parsedSalary);
+        // Adicionar ao histórico
+        await addSalaryHistoryEntry(historyEntry);
 
-      // Atualiza o salário específico para o mês/ano selecionado
-      updateMonthlySalary(selectedMonth, selectedYear, parsedSalary);
+        // Se marcou para aplicar em meses futuros
+        if (applyFromNow) {
+          const currentDate = new Date();
+          const currentMonth = currentDate.getMonth() + 1;
+          const currentYear = currentDate.getFullYear();
 
-      // Se for um aumento e o usuário optou por aplicar daqui para frente
-      if (isIncrease && applyFromNow) {
-        applyIncreaseFromNow(parsedSalary);
+          for (let year = currentYear; year <= currentYear + 1; year++) {
+            const startMonth = year === currentYear ? currentMonth : 1;
+            for (let month = startMonth; month <= 12; month++) {
+              await updateMonthlySalary(month, year, parsedSalary);
+            }
+          }
+        }
+
+        setIncreaseReason("");
+        setApplyFromNow(true);
+        setEditMode(false);
+        showTemporaryFeedback("Salário atualizado com sucesso!");
+      } catch (error) {
+        console.error("Erro ao atualizar salário:", error);
+        showTemporaryFeedback("Erro ao atualizar salário", "error");
+      } finally {
+        setIsSubmitting(false);
       }
-
-      // Limpar e fechar formulário
-      setIncreaseReason("");
-      setApplyFromNow(true);
-      setEditMode(false);
-    }
-  };
-
-  // Aplicar aumento a todos os meses futuros
-  const applyIncreaseFromNow = (newSalary) => {
-    const startMonth = selectedMonth;
-    const startYear = selectedYear;
-
-    // Aplicar novo salário para todos os meses futuros no mesmo ano
-    for (let month = startMonth; month <= 12; month++) {
-      updateMonthlySalary(month, startYear, newSalary);
-    }
-
-    // Aplicar para todos os meses no próximo ano
-    const nextYear = startYear + 1;
-    for (let month = 1; month <= 12; month++) {
-      updateMonthlySalary(month, nextYear, newSalary);
     }
   };
 
   // Calcular salário acumulado do ano
-  const calculateYearlySalary = (year) => {
-    let total = 0;
-    for (let i = 1; i <= 12; i++) {
-      total += getMonthlySalary(i, year);
-    }
-    return total;
-  };
+  const calculateYearlySalary = useCallback(
+    (year) => {
+      let total = 0;
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+
+      for (let month = 1; month <= 12; month++) {
+        // Para o ano atual, usar dados reais até o mês atual
+        if (year === currentYear) {
+          const currentMonth = currentDate.getMonth() + 1;
+          const monthSalary = getMonthlySalary(month, year);
+          if (month <= currentMonth) {
+            total += monthSalary || 0;
+          } else {
+            // Para meses futuros do ano atual, usar o salário atual
+            total += salary || 0;
+          }
+        }
+        // Para anos futuros, sempre usar o salário atual
+        else if (year > currentYear) {
+          total += salary || 0;
+        }
+        // Para anos passados, usar os dados históricos
+        else {
+          const monthSalary = getMonthlySalary(month, year);
+          total += monthSalary || 0;
+        }
+      }
+      return total;
+    },
+    [getMonthlySalary, salary]
+  );
+
+  // Função para obter o salário do mês atual
+  const getCurrentMonthSalary = useCallback(() => {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+    return getMonthlySalary(currentMonth, currentYear);
+  }, [getMonthlySalary]);
 
   // Formatar valor para exibição
   const formatAmount = (amount) => {
@@ -214,12 +258,12 @@ const SalaryManager = ({
             />
           </div>
 
-          <div className="form-check">
+          <div className="form-check custom-checkbox">
             <input
               type="checkbox"
               id="apply-future"
               checked={applyFromNow}
-              onChange={(e) => setApplyFromNow(e.target.checked)}
+              onChange={handleApplyFutureChange}
             />
             <label htmlFor="apply-future">
               Aplicar este valor em todos os meses futuros
@@ -227,7 +271,9 @@ const SalaryManager = ({
           </div>
 
           <div className="form-buttons">
-            <button type="submit">Salvar</button>
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Salvando..." : "Salvar"}
+            </button>
             <button
               type="button"
               className="secondary"
@@ -261,7 +307,7 @@ const SalaryManager = ({
               {salaryHistory
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map((entry) => (
-                  <tr key={entry.id}>
+                  <tr key={entry.id || entry.date}>
                     <td>{formatDate(entry.date)}</td>
                     <td
                       className={
@@ -302,54 +348,64 @@ const SalaryManager = ({
   }
 
   // Interface padrão
-  const currentMonthSalary = getMonthlySalary(
-    new Date().getMonth() + 1,
-    currentYear
-  );
-  const annualSalary = calculateYearlySalary(currentYear);
-  const nextYearSalary = calculateYearlySalary(currentYear + 1);
+  if (!editMode && !historyMode) {
+    const currentMonthSalary = getCurrentMonthSalary();
+    const currentYear = new Date().getFullYear();
+    const annualSalary = calculateYearlySalary(currentYear);
+    const nextYearSalary = salary * 12; // Simplificando a projeção para usar o salário atual
 
-  return (
-    <div className="salary-manager">
-      <h2>Seus Salários</h2>
-      <div className="salary-summary">
-        <div className="salary-item">
-          <strong>Salário do mês atual: </strong>
-          {currentMonthSalary
-            ? formatAmount(currentMonthSalary)
-            : "Não definido"}
-        </div>
+    return (
+      <div className="salary-manager">
+        <h2>Seus Salários</h2>
+        {showFeedback && (
+          <div className={`alert ${feedbackType}`}>{feedbackMessage}</div>
+        )}
+        <div className="salary-summary">
+          <div className="salary-item">
+            <strong>Salário do mês atual: </strong>
+            <span className="salary-value">
+              {currentMonthSalary
+                ? formatAmount(currentMonthSalary)
+                : formatAmount(salary)}
+            </span>
+          </div>
 
-        <div className="salary-item">
-          <strong>Salário anual acumulado ({currentYear}): </strong>
-          {formatAmount(annualSalary)}
-        </div>
+          <div className="salary-item">
+            <strong>Salário anual acumulado ({currentYear}): </strong>
+            <span className="salary-value">{formatAmount(annualSalary)}</span>
+          </div>
 
-        <div className="salary-item">
-          <strong>Projeção para {currentYear + 1}: </strong>
-          {formatAmount(nextYearSalary)}
-        </div>
+          <div className="salary-item">
+            <strong>Projeção para {currentYear + 1}: </strong>
+            <span className="salary-value">{formatAmount(nextYearSalary)}</span>
+          </div>
 
-        <div className="salary-actions">
-          <button
-            type="button"
-            onClick={() => setEditMode(true)}
-            className="edit">
-            {salary ? "Atualizar Salário" : "Definir Salário"}
-          </button>
+          <div className="salary-item">
+            <strong>Salário base definido: </strong>
+            <span className="salary-value">{formatAmount(salary)}</span>
+          </div>
 
-          {salaryHistory && salaryHistory.length > 0 && (
+          <div className="salary-actions">
             <button
               type="button"
-              onClick={() => setHistoryMode(true)}
-              className="history-button">
-              Ver Histórico
+              onClick={() => setEditMode(true)}
+              className="edit">
+              {salary ? "Atualizar Salário" : "Definir Salário"}
             </button>
-          )}
+
+            {salaryHistory && salaryHistory.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setHistoryMode(true)}
+                className="history-button">
+                Ver Histórico
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 };
 
 export default SalaryManager;
