@@ -1,0 +1,29 @@
+# Dependências
+/node_modules
+/.pnp
+.pnp.js
+
+# Arquivos de compilação
+/build
+/dist
+
+# Ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode/
+.idea/
+*.sublime-*
+
+# Sistema
+.DS_Store
+Thumbs.db
