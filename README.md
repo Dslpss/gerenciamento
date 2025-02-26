@@ -20,11 +20,14 @@ Sistema de gerenciamento de finanças pessoais desenvolvido com React e Firebase
 
 1. Clone o repositório
 2. Instale as dependências:
+
 ```bash
 npm install
 ```
+
 3. Copie o arquivo `.env.example` para `.env` e configure suas variáveis
 4. Execute o projeto:
+
 ```bash
 npm start
 ```
@@ -32,6 +35,7 @@ npm start
 ## Deploy
 
 O projeto está configurado para deploy no Netlify:
+
 ```bash
 npm run netlify-deploy
 ```
