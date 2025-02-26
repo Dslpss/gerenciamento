@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { formatDateForInput } from "../utils/dateUtils";
+import { useExpenses } from "../contexts/ExpenseContext";
 
-const ExpenseForm = ({
-  addExpense,
-  editingExpense,
-  updateExpense,
-  onClose,
-}) => {
+const ExpenseForm = ({ editingExpense, onClose }) => {
+  const { addExpense, updateExpense } = useExpenses();
+
   // Estado único para os dados do formulário
   const [formData, setFormData] = useState({
     description: "",
@@ -95,7 +93,7 @@ const ExpenseForm = ({
   };
 
   // Envio do formulário
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -111,12 +109,9 @@ const ExpenseForm = ({
       };
 
       if (editingExpense && editingExpense.id) {
-        updateExpense({
-          ...expenseData,
-          id: editingExpense.id,
-        });
+        await updateExpense(editingExpense.id, expenseData);
       } else {
-        addExpense(expenseData);
+        await addExpense(expenseData);
       }
 
       resetForm();

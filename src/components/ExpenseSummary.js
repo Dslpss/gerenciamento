@@ -1,131 +1,150 @@
 import React, { useMemo } from "react";
+import { useExpenses } from "../contexts/ExpenseContext";
+import "../styles/ExpenseSummary.css";
 
-const ExpenseSummary = ({ expenses, salary, isMonthlyView }) => {
-  // Calcular totais e estatísticas
-  const summary = useMemo(() => {
-    const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+const ExpenseSummary = ({
+  expenses: propExpenses,
+  salary,
+  isMonthlyView = false,
+}) => {
+  // Usar os expenses do contexto, caso não sejam fornecidos via props
+  const { expenses: contextExpenses } = useExpenses(); // Remover lastUpdate da desestruturação
 
-    const totalByCategory = expenses.reduce((acc, expense) => {
-      if (!acc[expense.category]) {
-        acc[expense.category] = 0;
-      }
-      acc[expense.category] += expense.amount;
-      return acc;
-    }, {});
+  // Usar os expenses das props, se fornecidos, caso contrário do contexto
+  const expenses = propExpenses || contextExpenses;
 
-    const mostExpensiveCategory =
-      Object.entries(totalByCategory).sort(([, a], [, b]) => b - a)[0] || [];
+  // Recalcular os valores sempre que as despesas ou o salário mudarem
+  const { totalAmount, remainingBudget, percentageSpent, categorySummary } =
+    useMemo(() => {
+      // Calcular o total de gastos
+      const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-    // Cálculos relacionados ao salário
-    const percentOfSalary = salary > 0 ? (total / salary) * 100 : 0;
-    const remaining = salary > 0 ? salary - total : 0;
+      // Calcular orçamento restante
+      const remaining = Math.max(0, salary - total);
 
-    return {
-      total,
-      count: expenses.length,
-      totalByCategory,
-      mostExpensiveCategory: mostExpensiveCategory[0],
-      mostExpensiveAmount: mostExpensiveCategory[1],
-      percentOfSalary,
-      remaining,
-    };
-  }, [expenses, salary]);
+      // Calcular percentuais
+      const percentSpent = salary > 0 ? (total / salary) * 100 : 0;
+      const percentRemaining = salary > 0 ? (remaining / salary) * 100 : 0;
 
-  // Formatar valor para exibição
-  const formatAmount = (amount) => {
+      // Calcular resumo por categoria
+      const categories = {};
+      expenses.forEach((expense) => {
+        const category = expense.category || "Outros";
+        if (!categories[category]) {
+          categories[category] = { total: 0, count: 0, percentage: 0 };
+        }
+        categories[category].total += expense.amount;
+        categories[category].count += 1;
+      });
+
+      // Calcular percentuais por categoria
+      Object.keys(categories).forEach((category) => {
+        categories[category].percentage =
+          total > 0 ? (categories[category].total / total) * 100 : 0;
+      });
+
+      return {
+        totalAmount: total,
+        remainingBudget: remaining,
+        percentageSpent: percentSpent,
+        percentageRemaining: percentRemaining,
+        categorySummary: categories,
+      };
+    }, [expenses, salary]); // Remover lastUpdate das dependências
+
+  // Formatação de valores monetários
+  const formatCurrency = (amount) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(amount || 0);
+    }).format(amount);
   };
 
-  // Formatar percentual para exibição
-  const formatPercent = (percent) => {
-    return `${percent.toFixed(1)}%`;
+  // Determinar classe CSS com base no percentual gasto
+  const getBudgetStatusClass = () => {
+    if (percentageSpent >= 90) return "danger";
+    if (percentageSpent >= 75) return "warning";
+    return "good";
+  };
+
+  // Renderizar barras de progresso para o orçamento
+  const renderBudgetProgressBars = () => {
+    return (
+      <div className="budget-progress">
+        <div className="progress-container">
+          <div
+            className={`progress-bar ${getBudgetStatusClass()}`}
+            style={{ width: `${Math.min(percentageSpent, 100)}%` }}>
+            {percentageSpent > 10 && <span>{percentageSpent.toFixed(0)}%</span>}
+          </div>
+        </div>
+        <div className="budget-labels">
+          <span className="spent-label">
+            Gasto: {formatCurrency(totalAmount)}
+          </span>
+          <span className="remaining-label">
+            Disponível: {formatCurrency(remainingBudget)}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  // Renderizar resumo por categoria
+  const renderCategorySummary = () => {
+    if (Object.keys(categorySummary).length === 0) {
+      return <p>Nenhum gasto registrado.</p>;
+    }
+
+    // Ordenar categorias por valor total (maior para menor)
+    const sortedCategories = Object.entries(categorySummary).sort(
+      ([, a], [, b]) => b.total - a.total
+    );
+
+    return (
+      <div className="category-summary">
+        <h3>Gastos por Categoria</h3>
+        {sortedCategories.map(([category, data]) => (
+          <div key={category} className="category-item">
+            <div className="category-header">
+              <span className="category-name">{category}</span>
+              <span className="category-amount">
+                {formatCurrency(data.total)}
+              </span>
+            </div>
+            <div className="category-progress-container">
+              <div
+                className="category-progress-bar"
+                style={{ width: `${data.percentage}%` }}></div>
+            </div>
+            <div className="category-stats">
+              <span>{data.percentage.toFixed(1)}%</span>
+              <span>{data.count} item(s)</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
-    <div>
-      <h2>Resumo</h2>
-      <div className="summary">
-        <div>
-          <strong>Total de gastos:</strong> {formatAmount(summary.total)}
-        </div>
-        <div>
-          <strong>Quantidade de gastos:</strong> {summary.count}
+    <div className="expense-summary">
+      <div className="budget-section">
+        <h3>
+          {isMonthlyView ? "Orçamento Mensal" : "Resumo Financeiro"}:{" "}
+          {formatCurrency(salary)}
+        </h3>
+        {renderBudgetProgressBars()}
+        <div className="budget-status" data-status={getBudgetStatusClass()}>
+          {percentageSpent >= 90
+            ? "Orçamento excedido!"
+            : percentageSpent >= 75
+            ? "Atenção! Orçamento quase esgotado."
+            : "Orçamento saudável."}
         </div>
       </div>
 
-      {salary > 0 && (
-        <div className="salary-summary">
-          <h3>Comparativo com Salário</h3>
-          <div
-            className={`summary ${
-              summary.percentOfSalary > 100 ? "warning" : ""
-            }`}>
-            <div>
-              <strong>Porcentagem do salário gasto:</strong>{" "}
-              {formatPercent(summary.percentOfSalary)}
-            </div>
-            <div>
-              <strong>
-                {isMonthlyView
-                  ? "Restante do salário:"
-                  : "Valor em relação ao salário:"}
-              </strong>{" "}
-              {formatAmount(summary.remaining)}
-            </div>
-          </div>
-
-          {summary.percentOfSalary > 100 && isMonthlyView && (
-            <div className="alert warning">
-              Atenção! Seus gastos excederam o valor do seu salário neste mês.
-            </div>
-          )}
-
-          {summary.percentOfSalary > 80 &&
-            summary.percentOfSalary <= 100 &&
-            isMonthlyView && (
-              <div className="alert warning">
-                Cuidado! Seus gastos estão próximos do limite do seu salário.
-              </div>
-            )}
-        </div>
-      )}
-
-      {summary.mostExpensiveCategory && (
-        <div className="summary">
-          <div>
-            <strong>Categoria mais cara:</strong>{" "}
-            {summary.mostExpensiveCategory}
-          </div>
-          <div>
-            <strong>Valor:</strong> {formatAmount(summary.mostExpensiveAmount)}
-          </div>
-        </div>
-      )}
-
-      <h3>Gastos por categoria</h3>
-      {Object.entries(summary.totalByCategory).length > 0 ? (
-        Object.entries(summary.totalByCategory)
-          .sort(([, a], [, b]) => b - a)
-          .map(([category, amount]) => (
-            <div key={category} className="expense-item">
-              <div>{category}</div>
-              <div>
-                {formatAmount(amount)}
-                {salary > 0 && (
-                  <span className="category-percent">
-                    {" "}
-                    ({formatPercent((amount / salary) * 100)} do salário)
-                  </span>
-                )}
-              </div>
-            </div>
-          ))
-      ) : (
-        <p>Nenhum dado disponível</p>
-      )}
+      {renderCategorySummary()}
     </div>
   );
 };

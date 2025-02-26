@@ -1,15 +1,19 @@
 import React, { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { limparTodosDados } from "../firebase/firebaseUtils";
 import {
   isLocalStorageAvailable,
   saveToLocalStorage,
   loadFromLocalStorage,
-  clearLocalStorage,
 } from "../utils/storage";
 
 const DataManager = () => {
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [importData, setImportData] = useState("");
   const [showImport, setShowImport] = useState(false);
+  const { currentUser } = useAuth();
 
   // Verificar se o localStorage está disponível
   const isStorageAvailable = isLocalStorageAvailable();
@@ -91,18 +95,46 @@ const DataManager = () => {
   };
 
   // Limpar todos os dados
-  const handleClearData = () => {
-    if (
-      window.confirm(
-        "Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita."
-      )
-    ) {
-      clearLocalStorage();
-      setMessage({ type: "success", text: "Todos os dados foram apagados" });
-
-      // Recarregar a página para atualizar os dados
-      setTimeout(() => window.location.reload(), 1500);
+  const handleClearData = async () => {
+    if (!isConfirming) {
+      setIsConfirming(true);
+      return;
     }
+
+    try {
+      setLoading(true);
+      setMessage({ type: "info", text: "Excluindo dados..." });
+
+      if (!currentUser) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      await limparTodosDados(currentUser.uid);
+
+      setMessage({
+        type: "success",
+        text: "Todos os dados foram excluídos com sucesso!",
+      });
+
+      // Opcional: Recarregar a página após alguns segundos
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error("Erro ao limpar dados:", error);
+
+      setMessage({
+        type: "error",
+        text: "Erro ao excluir dados: " + error.message,
+      });
+    } finally {
+      setLoading(false);
+      setIsConfirming(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsConfirming(false);
   };
 
   // Manipular seleção de arquivo
@@ -152,9 +184,36 @@ const DataManager = () => {
           {showImport ? "Cancelar Importação" : "Importar Dados"}
         </button>
 
-        <button onClick={handleClearData} className="delete">
-          Limpar Todos os Dados
-        </button>
+        {isConfirming ? (
+          <div className="confirmation-section">
+            <p className="warning-text">
+              Esta ação irá excluir permanentemente todos os seus dados.
+              <br />
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="confirmation-buttons">
+              <button
+                className="danger"
+                onClick={handleClearData}
+                disabled={loading}>
+                {loading ? "Excluindo..." : "Sim, excluir tudo"}
+              </button>
+              <button
+                className="secondary"
+                onClick={handleCancel}
+                disabled={loading}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            className="danger"
+            onClick={handleClearData}
+            disabled={loading}>
+            Limpar Todos os Dados
+          </button>
+        )}
       </div>
 
       {showImport && (

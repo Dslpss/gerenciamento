@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AuthProvider } from "./contexts/AuthContext"; // Adicionar esta importação
+import { AuthProvider } from "./contexts/AuthContext";
 import ExpenseForm from "./components/ExpenseForm";
 import ExpenseList from "./components/ExpenseList";
 import ExpenseSummary from "./components/ExpenseSummary";
@@ -9,20 +9,19 @@ import AnnualReport from "./components/AnnualReport";
 import DataManager from "./components/DataManager";
 import { saveToLocalStorage } from "./utils/storage";
 import Navbar from "./components/Navbar";
-import { createSafeExpense } from "./utils/dataCleaner";
 import { useAuth } from "./contexts/AuthContext";
 import AuthScreen from "./components/AuthScreen";
 import {
-  salvarDespesaFirestore,
   atualizarDadosSalario,
   carregarDadosIniciais,
 } from "./firebase/firebaseUtils";
 import Header from "./components/Header";
-import "./styles/Header.css"; // Corrigido o caminho da importação
+import "./styles/Header.css";
+import { ExpenseProvider, useExpenses } from "./contexts/ExpenseContext";
 
 function AppContent() {
   const { currentUser } = useAuth();
-  const [expenses, setExpenses] = useState([]);
+  const { expenses } = useExpenses();
   const [editingExpense, setEditingExpense] = useState(null);
   const [filters, setFilters] = useState({
     category: "todas",
@@ -47,7 +46,6 @@ function AppContent() {
 
         setMonthlySalaries(dados.monthlySalaries || {});
         setSalaryHistory(dados.salaryHistory || []);
-        setExpenses(dados.expenses || []);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
       }
@@ -58,24 +56,16 @@ function AppContent() {
 
   // Salvar dados quando alterados
   useEffect(() => {
-    if (!currentUser) return; // Não salvar se não houver usuário
+    if (!currentUser) return;
 
-    try {
-      console.log("Salvando expenses:", expenses);
-      saveToLocalStorage("expenses", expenses);
-    } catch (error) {
-      console.error("Erro ao salvar expenses:", error);
-    }
-  }, [expenses, currentUser]);
-
-  useEffect(() => {
     try {
       console.log("Salvando salary:", salary);
       saveToLocalStorage("salary", salary);
     } catch (error) {
       console.error("Erro ao salvar salary:", error);
     }
-  }, [salary]);
+    // Adicionando currentUser às dependências
+  }, [salary, currentUser]);
 
   useEffect(() => {
     try {
@@ -104,19 +94,25 @@ function AppContent() {
 
       console.log("Atualizando salário para:", newSalary);
 
-      // Atualizar no Firestore
-      await atualizarDadosSalario(currentUser.uid, {
-        defaultSalary: newSalary,
-        monthlySalaries,
-        salaryHistory,
-      });
-
-      // Atualizar estado local
+      // Atualizar estado local primeiro
       setSalary(newSalary);
 
-      console.log("Salário atualizado com sucesso");
+      // Atualizar no Firestore
+      try {
+        await atualizarDadosSalario(currentUser.uid, {
+          defaultSalary: newSalary,
+          monthlySalaries,
+          salaryHistory,
+        });
+
+        console.log("Salário atualizado com sucesso");
+      } catch (firebaseError) {
+        console.warn("Falha ao salvar no Firebase:", firebaseError);
+        console.log("Salário atualizado apenas localmente");
+      }
     } catch (error) {
       console.error("Erro ao atualizar salário:", error);
+      alert("Erro ao atualizar salário: " + error.message);
     }
   };
 
@@ -138,52 +134,6 @@ function AppContent() {
   const getMonthlySalary = (month, year) => {
     const key = `${year}-${month}`;
     return monthlySalaries[key] || salary;
-  };
-
-  // Adicionar um novo gasto com validação
-  const addExpense = async (expense) => {
-    try {
-      if (!currentUser) {
-        throw new Error("Usuário não autenticado");
-      }
-
-      const newExpense = createSafeExpense({
-        ...expense,
-        id: Date.now().toString(),
-      });
-
-      // Salvar no Firestore
-      await salvarDespesaFirestore(newExpense, currentUser.uid);
-
-      // Atualizar estado local
-      setExpenses((prev) => [...prev, newExpense]);
-
-      console.log("Despesa salva com sucesso");
-    } catch (error) {
-      console.error("Erro ao adicionar despesa:", error);
-    }
-  };
-
-  // Atualizar um gasto existente com validação
-  const updateExpense = (updatedExpense) => {
-    try {
-      // Criar um objeto de despesa seguro com valores validados
-      const safeExpense = createSafeExpense(updatedExpense);
-
-      const updatedExpenses = expenses.map((expense) =>
-        expense.id === updatedExpense.id ? safeExpense : expense
-      );
-
-      setExpenses(updatedExpenses);
-      setEditingExpense(null);
-    } catch (error) {
-      console.error("Erro ao atualizar despesa:", error);
-    }
-  };
-
-  // Remover um gasto
-  const deleteExpense = (id) => {
-    setExpenses(expenses.filter((expense) => expense.id !== id));
   };
 
   // Iniciar edição de um gasto
@@ -227,11 +177,7 @@ function AppContent() {
               isMonthlyView={true}
             />
             <div className="recent-expenses-section">
-              <ExpenseList
-                expenses={filteredExpenses.slice(0, 5)}
-                onDelete={deleteExpense}
-                onEdit={startEditExpense}
-              />
+              <ExpenseList onEdit={startEditExpense} />
             </div>
           </div>
         );
@@ -240,11 +186,7 @@ function AppContent() {
         return (
           <div className="page-content">
             <ExpenseFilter filters={filters} setFilters={setFilters} />
-            <ExpenseList
-              expenses={filteredExpenses}
-              onDelete={deleteExpense}
-              onEdit={startEditExpense}
-            />
+            <ExpenseList onEdit={startEditExpense} />
           </div>
         );
 
@@ -279,7 +221,6 @@ function AppContent() {
     }
   };
 
-  // Se não houver usuário autenticado, mostra a tela de autenticação
   if (!currentUser) {
     return (
       <AuthScreen onLoginSuccess={() => console.log("Usuário autenticado")} />
@@ -294,9 +235,7 @@ function AppContent() {
         {editingExpense ? (
           <div className="modal">
             <ExpenseForm
-              addExpense={addExpense}
               editingExpense={editingExpense}
-              updateExpense={updateExpense}
               onClose={() => setEditingExpense(null)}
             />
           </div>
@@ -319,7 +258,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ExpenseProvider>
+        <AppContent />
+      </ExpenseProvider>
     </AuthProvider>
   );
 }

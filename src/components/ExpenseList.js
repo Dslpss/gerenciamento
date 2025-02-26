@@ -1,6 +1,9 @@
 import React from "react";
+import { useExpenses } from "../contexts/ExpenseContext";
 
-const ExpenseList = ({ expenses, onDelete, onEdit }) => {
+const ExpenseList = ({ onEdit }) => {
+  const { expenses, deleteExpense, loading } = useExpenses();
+
   // Ordenar gastos por data (mais recente primeiro)
   const sortedExpenses = [...expenses].sort(
     (a, b) => new Date(b.date) - new Date(a.date)
@@ -19,6 +22,25 @@ const ExpenseList = ({ expenses, onDelete, onEdit }) => {
       currency: "BRL",
     }).format(amount);
   };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteExpense(id);
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+      alert("Erro ao excluir o item");
+    }
+  };
+
+  const handleEdit = (expense) => {
+    if (onEdit) {
+      onEdit(expense);
+    }
+  };
+
+  if (loading) {
+    return <div>Carregando...</div>;
+  }
 
   return (
     <div>
@@ -39,12 +61,12 @@ const ExpenseList = ({ expenses, onDelete, onEdit }) => {
               <div>
                 <div>{formatAmount(expense.amount)}</div>
                 <div className="actions">
-                  <button className="edit" onClick={() => onEdit(expense)}>
+                  <button className="edit" onClick={() => handleEdit(expense)}>
                     Editar
                   </button>
                   <button
                     className="delete"
-                    onClick={() => onDelete(expense.id)}>
+                    onClick={() => handleDelete(expense.id)}>
                     Excluir
                   </button>
                 </div>

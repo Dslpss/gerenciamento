@@ -1,0 +1,140 @@
+.expense-summary {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.budget-section {
+  margin-bottom: 20px;
+}
+
+.budget-section h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.budget-progress {
+  margin: 15px 0;
+}
+
+.progress-container {
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  height: 20px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: width 0.3s ease;
+}
+
+.progress-bar.good {
+  background-color: #4caf50;
+}
+
+.progress-bar.warning {
+  background-color: #ff9800;
+}
+
+.progress-bar.danger {
+  background-color: #f44336;
+}
+
+.budget-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.spent-label {
+  color: #777;
+}
+
+.remaining-label {
+  font-weight: bold;
+}
+
+.budget-status {
+  padding: 8px;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.budget-status[data-status="good"] {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.budget-status[data-status="warning"] {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}
+
+.budget-status[data-status="danger"] {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.category-summary {
+  margin-top: 25px;
+}
+
+.category-summary h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #555;
+}
+
+.category-item {
+  margin-bottom: 12px;
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.category-name {
+  font-weight: bold;
+  color: #444;
+}
+
+.category-amount {
+  color: #555;
+}
+
+.category-progress-container {
+  background-color: #f5f5f5;
+  height: 8px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.category-progress-bar {
+  background-color: #2196f3;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.category-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #777;
+}
