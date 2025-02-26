@@ -9,6 +9,24 @@ const ExpenseList = ({ onEdit }) => {
     (a, b) => new Date(b.date) - new Date(a.date)
   );
 
+  // Verificar e corrigir IDs duplicados
+  const uniqueExpenses = [];
+  const idSet = new Set();
+  
+  // Filtrar para garantir IDs únicos
+  sortedExpenses.forEach(expense => {
+    // Se o ID não existir ou já estiver no conjunto, gere um novo ID
+    if (!expense.id || idSet.has(expense.id)) {
+      expense = {
+        ...expense,
+        id: `${expense.id || ''}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      };
+    }
+    
+    idSet.add(expense.id);
+    uniqueExpenses.push(expense);
+  });
+
   // Formatar data para exibição
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -45,11 +63,11 @@ const ExpenseList = ({ onEdit }) => {
   return (
     <div>
       <h2>Lista de Gastos</h2>
-      {sortedExpenses.length === 0 ? (
+      {uniqueExpenses.length === 0 ? (
         <p>Nenhum gasto encontrado.</p>
       ) : (
         <div>
-          {sortedExpenses.map((expense) => (
+          {uniqueExpenses.map((expense) => (
             <div key={expense.id} className="expense-item">
               <div>
                 <h3>{expense.description}</h3>

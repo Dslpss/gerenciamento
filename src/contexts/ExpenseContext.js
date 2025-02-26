@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { db } from "../firebase";
+// Corrigir a importação do Firestore
+import { db } from "../firebase/config"; // Ajustado para importar do arquivo correto
 import {
   collection,
   addDoc,
@@ -16,7 +17,7 @@ const ExpenseContext = createContext();
 export const ExpenseProvider = ({ children }) => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState(Date.now()); // Estado para forçar re-renderização
+  const [lastUpdate, setLastUpdate] = useState(Date.now());
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export const ExpenseProvider = ({ children }) => {
       try {
         // Referência à subcoleção de despesas do usuário
         const expensesRef = collection(
-          db,
+          db, // Usando a referência correta ao db
           "users",
           currentUser.uid,
           "expenses"
@@ -40,7 +41,7 @@ export const ExpenseProvider = ({ children }) => {
               ...doc.data(),
             }));
             setExpenses(expenseData);
-            setLastUpdate(Date.now()); // Atualiza o timestamp para forçar re-renderização
+            setLastUpdate(Date.now());
             setLoading(false);
           },
           (error) => {
@@ -64,20 +65,29 @@ export const ExpenseProvider = ({ children }) => {
     try {
       if (!currentUser) throw new Error("Usuário não autenticado");
 
-      const expensesRef = collection(db, "users", currentUser.uid, "expenses");
+      const expensesRef = collection(
+        db, // Usando a referência correta ao db
+        "users",
+        currentUser.uid,
+        "expenses"
+      );
+
+      // Gerar um ID temporário único para uso local
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
       // Adicionar timestamp do servidor para garantir consistência
       const newExpenseData = {
         ...expenseData,
         createdAt: serverTimestamp(),
         userId: currentUser.uid,
+        // Não incluir o tempId aqui - deixamos o Firestore gerar o ID
       };
 
       const docRef = await addDoc(expensesRef, newExpenseData);
 
       // Atualizar o estado local imediatamente para feedback instantâneo
       const newExpense = {
-        id: docRef.id,
+        id: docRef.id, // Usar o ID gerado pelo Firestore
         ...newExpenseData,
         createdAt: new Date().toISOString(), // Usar data local para preview até que o Firestore sincronize
       };
@@ -97,7 +107,13 @@ export const ExpenseProvider = ({ children }) => {
     try {
       if (!currentUser) throw new Error("Usuário não autenticado");
 
-      const expenseRef = doc(db, "users", currentUser.uid, "expenses", id);
+      const expenseRef = doc(
+        db, // Usando a referência correta ao db
+        "users",
+        currentUser.uid,
+        "expenses",
+        id
+      );
 
       // Adicionar timestamp de atualização
       const dataWithTimestamp = {
@@ -130,7 +146,13 @@ export const ExpenseProvider = ({ children }) => {
     try {
       if (!currentUser) throw new Error("Usuário não autenticado");
 
-      const expenseRef = doc(db, "users", currentUser.uid, "expenses", id);
+      const expenseRef = doc(
+        db, // Usando a referência correta ao db
+        "users",
+        currentUser.uid,
+        "expenses",
+        id
+      );
       await deleteDoc(expenseRef);
 
       // Atualizar estado local imediatamente
