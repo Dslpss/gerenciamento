@@ -1,0 +1,109 @@
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  position: relative;
+  z-index: 100;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.logo h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  min-width: auto;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.user-info span {
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.logout-btn {
+  padding: 6px 12px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+.logout-btn:hover {
+  background-color: #c82333;
+}
+
+.logout-btn:disabled {
+  background-color: #999;
+  cursor: not-allowed;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0.75rem;
+  }
+
+  .user-info {
+    gap: 0.25rem;
+  }
+
+  .user-info span {
+    font-size: 0.85rem;
+    max-width: 120px;
+  }
+
+  .logout-btn {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    min-width: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo h1 {
+    font-size: 0.9rem;
+  }
+
+  .user-info span {
+    max-width: 80px;
+  }
+
+  .logout-btn {
+    padding: 4px 6px;
+  }
+}

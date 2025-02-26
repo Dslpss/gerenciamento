@@ -4,12 +4,10 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendPasswordResetEmail,
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
-import {
-  fazerLogin,
-  criarUsuario,
-  fazerLogout,
-} from "../firebase/firebaseUtils";
 import { doc, setDoc } from "firebase/firestore";
 
 const AuthContext = createContext();
@@ -34,15 +32,15 @@ export function AuthProvider({ children }) {
 
   // Funções de autenticação
   const login = async (email, password) => {
-    return fazerLogin(email, password);
+    return signInWithEmailAndPassword(auth, email, password);
   };
 
   const signup = async (email, password) => {
-    return criarUsuario(email, password);
+    return createUserWithEmailAndPassword(auth, email, password);
   };
 
-  const logout = async () => {
-    return fazerLogout();
+  const logout = () => {
+    return signOut(auth);
   };
 
   const resetPassword = async (email) => {

@@ -1,29 +1,25 @@
 import React from "react";
+import LogoutButton from "./LogoutButton";
+import { useAuth } from "../contexts/AuthContext";
+import "../styles/Header.css";
 
-const Header = ({ activeTab }) => {
-  const getTitle = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return "Visão Geral";
-      case "expenses":
-        return "Meus Gastos";
-      case "reports":
-        return "Relatórios";
-      case "settings":
-        return "Configurações";
-      default:
-        return "Gerenciamento";
-    }
-  };
+const Header = () => {
+  const { currentUser } = useAuth();
 
   return (
     <header className="app-header">
-      <h1>{getTitle()}</h1>
-      <div className="header-actions">
-        <button className="icon-button">
-          <span className="material-icons">notifications</span>
-        </button>
+      <div className="logo">
+        <h1>Sistema de Gerenciamento</h1>
       </div>
+
+      {currentUser && (
+        <div className="user-actions">
+          <div className="user-info">
+            <span>Olá, {currentUser.email}</span>
+            <LogoutButton className="logout-btn" />
+          </div>
+        </div>
+      )}
     </header>
   );
 };

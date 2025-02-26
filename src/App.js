@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { AuthProvider } from "./contexts/AuthContext"; // Adicionar esta importação
 import ExpenseForm from "./components/ExpenseForm";
 import ExpenseList from "./components/ExpenseList";
 import ExpenseSummary from "./components/ExpenseSummary";
@@ -16,8 +17,10 @@ import {
   atualizarDadosSalario,
   carregarDadosIniciais,
 } from "./firebase/firebaseUtils";
+import Header from "./components/Header";
+import "./styles/Header.css"; // Corrigido o caminho da importação
 
-function App() {
+function AppContent() {
   const { currentUser } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -285,9 +288,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <div className="app-header">
-        <h1>Gerenciamento</h1>
-      </div>
+      <Header />
 
       <main className="main-content">
         {editingExpense ? (
@@ -312,6 +313,14 @@ function App() {
 
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
