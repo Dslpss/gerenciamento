@@ -5,7 +5,9 @@ import {
   isLocalStorageAvailable,
   saveToLocalStorage,
   loadFromLocalStorage,
+  clearLocalStorage,
 } from "../utils/storage";
+import { useExpenses } from "../contexts/ExpenseContext"; // Importando o contexto
 
 const DataManager = () => {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -14,6 +16,7 @@ const DataManager = () => {
   const [importData, setImportData] = useState("");
   const [showImport, setShowImport] = useState(false);
   const { currentUser } = useAuth();
+  const { clearExpenses } = useExpenses(); // Usando o método do contexto
 
   // Verificar se o localStorage está disponível
   const isStorageAvailable = isLocalStorageAvailable();
@@ -109,14 +112,29 @@ const DataManager = () => {
         throw new Error("Usuário não autenticado");
       }
 
+      // 1. Limpar dados no Firebase
       await limparTodosDados(currentUser.uid);
+      console.log("Dados do Firebase excluídos com sucesso");
+
+      // 2. Limpar dados no localStorage
+      clearLocalStorage("expenses");
+      clearLocalStorage("salary");
+      clearLocalStorage("monthlySalaries");
+      clearLocalStorage("salaryHistory");
+      console.log("Dados do localStorage excluídos com sucesso");
+
+      // 3. Limpar estado no contexto
+      if (clearExpenses) {
+        clearExpenses();
+        console.log("Estado do contexto de despesas limpo");
+      }
 
       setMessage({
         type: "success",
         text: "Todos os dados foram excluídos com sucesso!",
       });
 
-      // Opcional: Recarregar a página após alguns segundos
+      // Recarregar a página após alguns segundos, agora com localStorage limpo
       setTimeout(() => {
         window.location.reload();
       }, 2000);

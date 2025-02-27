@@ -429,27 +429,64 @@ export const atualizarDadosSalario = async (userId, dados) => {
   }
 };
 
-// Limpar todos os dados do usuário
+// Limpar todos os dados do usuário - Versão melhorada
 export const limparTodosDados = async (userId) => {
+  if (!userId) {
+    console.error("ID de usuário não fornecido");
+    throw new Error("ID de usuário não fornecido");
+  }
+
   try {
+    console.log("Iniciando limpeza de dados para o usuário:", userId);
     const batch = writeBatch(db);
 
-    // 1. Apagar documento de usuário
-    const userDocRef = doc(db, "userData", userId);
-    batch.delete(userDocRef);
+    // 1. Limpar dados de usuário
+    try {
+      // Limpar documento em userData
+      const userDataRef = doc(db, "userData", userId);
+      batch.delete(userDataRef);
+      console.log("Documento userData marcado para exclusão");
 
-    // 2. Apagar todas as despesas do usuário
-    const expensesRef = collection(db, "users", userId, "expenses");
-    const expensesSnapshot = await getDocs(expensesRef);
+      // Limpar documento em salaries
+      const salaryRef = doc(db, "salaries", userId);
+      batch.delete(salaryRef);
+      console.log("Documento salaries marcado para exclusão");
 
-    expensesSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
+      // Limpar documento em users
+      const userRef = doc(db, "users", userId);
+      batch.delete(userRef);
+      console.log("Documento users marcado para exclusão");
 
-    // Executar todas as operações em lote
+      // Limpar documento de salaryData
+      const salaryDataRef = doc(db, "users", userId, "salaryData", "current");
+      batch.delete(salaryDataRef);
+      console.log("Documento salaryData marcado para exclusão");
+    } catch (error) {
+      console.warn(
+        "Erro ao preparar documentos principais para exclusão:",
+        error
+      );
+    }
+
+    // 2. Limpar coleção de despesas
+    try {
+      const expensesRef = collection(db, "users", userId, "expenses");
+      const expensesSnapshot = await getDocs(expensesRef);
+
+      console.log(`Encontradas ${expensesSnapshot.size} despesas para excluir`);
+
+      expensesSnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      console.log("Todas as despesas marcadas para exclusão");
+    } catch (error) {
+      console.warn("Erro ao obter despesas para exclusão:", error);
+    }
+
+    // Executar operações em lote
     await batch.commit();
 
-    console.log("Todos os dados foram limpos com sucesso");
+    console.log("Todos os dados foram limpos com sucesso no Firebase");
     return true;
   } catch (error) {
     console.error("Erro ao limpar dados:", error);

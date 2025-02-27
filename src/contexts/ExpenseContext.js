@@ -188,6 +188,14 @@ export const ExpenseProvider = ({ children }) => {
     }
   };
 
+  // Função para limpar todas as despesas (para uso com a função de reset de dados)
+  const clearExpenses = () => {
+    setExpenses([]);
+    setLastUpdate(Date.now());
+    console.log("Estado de despesas limpo");
+    return true;
+  };
+
   return (
     <ExpenseContext.Provider
       value={{
@@ -197,6 +205,7 @@ export const ExpenseProvider = ({ children }) => {
         addExpense,
         updateExpense,
         deleteExpense,
+        clearExpenses, // Adicionando a nova função ao contexto
       }}>
       {children}
     </ExpenseContext.Provider>
