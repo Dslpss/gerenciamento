@@ -18,6 +18,8 @@ import {
 import Header from "./components/Header";
 import "./styles/Header.css";
 import { ExpenseProvider, useExpenses } from "./contexts/ExpenseContext";
+import DashboardSummary from "./components/DashboardSummary";
+import ExpenseCalendar from "./components/ExpenseCalendar";
 
 function AppContent() {
   const { currentUser } = useAuth();
@@ -32,6 +34,7 @@ function AppContent() {
   const [monthlySalaries, setMonthlySalaries] = useState({});
   const [salaryHistory, setSalaryHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [selectedDayExpenses, setSelectedDayExpenses] = useState(null);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -183,22 +186,33 @@ function AppContent() {
     return salary;
   };
 
+  // Função para lidar com o clique em um dia do calendário
+  const handleCalendarDayClick = (date, dayExpenses) => {
+    setSelectedDayExpenses({
+      date: date,
+      expenses: dayExpenses,
+    });
+  };
+
+  // Fechar o modal de despesas do dia
+  const closeDayExpensesModal = () => {
+    setSelectedDayExpenses(null);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
         return (
           <div className="page-content">
+            <DashboardSummary salary={getApplicableSalary()} />
+            <ExpenseCalendar onDayClick={handleCalendarDayClick} />
             <ExpenseSummary
               expenses={filteredExpenses}
               salary={getApplicableSalary()}
               isMonthlyView={true}
             />
-            <div className="recent-expenses-section">
-              <ExpenseList onEdit={startEditExpense} />
-            </div>
           </div>
         );
-
       case "expenses":
         return (
           <div className="page-content">
@@ -206,7 +220,6 @@ function AppContent() {
             <ExpenseList onEdit={startEditExpense} />
           </div>
         );
-
       case "reports":
         return (
           <div className="page-content">
@@ -217,7 +230,6 @@ function AppContent() {
             />
           </div>
         );
-
       case "settings":
         return (
           <div className="page-content">
@@ -232,7 +244,6 @@ function AppContent() {
             <DataManager />
           </div>
         );
-
       default:
         return null;
     }
@@ -256,12 +267,63 @@ function AppContent() {
               onClose={() => setEditingExpense(null)}
             />
           </div>
+        ) : selectedDayExpenses ? (
+          <div className="modal">
+            <div className="day-expenses-modal">
+              <div className="modal-header">
+                <h3>
+                  Gastos de{" "}
+                  {selectedDayExpenses.date.toLocaleDateString("pt-BR")}
+                </h3>
+                <button
+                  className="close-button"
+                  onClick={closeDayExpensesModal}>
+                  &times;
+                </button>
+              </div>
+              <div className="day-expenses-list">
+                {selectedDayExpenses.expenses.map((expense) => (
+                  <div key={expense.id} className="day-expense-item">
+                    <div>
+                      <strong>{expense.description}</strong>
+                      <div className="expense-category">{expense.category}</div>
+                    </div>
+                    <div className="expense-amount">
+                      {new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      }).format(expense.amount)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="day-expenses-total">
+                <span>Total:</span>
+                <strong>
+                  {new Intl.NumberFormat("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  }).format(
+                    selectedDayExpenses.expenses.reduce(
+                      (total, expense) => total + expense.amount,
+                      0
+                    )
+                  )}
+                </strong>
+              </div>
+              <div className="modal-actions">
+                <button className="primary" onClick={closeDayExpensesModal}>
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
         ) : (
           renderContent()
         )}
       </main>
 
-      {activeTab === "expenses" && !editingExpense && (
+      {activeTab === "expenses" && !editingExpense && !selectedDayExpenses && (
         <button className="fab" onClick={() => setEditingExpense({})}>
           +
         </button>

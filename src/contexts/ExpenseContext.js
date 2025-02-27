@@ -40,11 +40,25 @@ export const ExpenseProvider = ({ children }) => {
         unsubscribe = onSnapshot(
           expensesRef,
           (snapshot) => {
+            // Conjunto para verificar IDs duplicados
+            const seenIds = new Set();
+
             const expenseData = snapshot.docs.map((doc) => {
               const data = doc.data();
+
+              // Verificar se já vimos este ID ou se não tem ID
+              let id = doc.id;
+              if (seenIds.has(id)) {
+                id = `${id}_${Date.now()}_${Math.random()
+                  .toString(36)
+                  .substr(2, 9)}`;
+                console.warn(`ID duplicado detectado e corrigido: ${id}`);
+              }
+              seenIds.add(id);
+
               // Garantir que as despesas possuam todos os campos necessários
               return {
-                id: doc.id,
+                id: id,
                 description: data.description || "",
                 amount: data.amount || 0,
                 date: data.date || new Date().toISOString().split("T")[0],

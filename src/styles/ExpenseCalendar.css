@@ -1,0 +1,301 @@
+.expense-calendar {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-header {
+  margin-bottom: 15px;
+}
+
+.month-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.month-navigation h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.month-nav-button {
+  background-color: #f1f5f9;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #334155;
+}
+
+.month-nav-button:hover {
+  background-color: #e2e8f0;
+}
+
+.today-button {
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  background-color: #e2e8f0;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #334155;
+}
+
+.monthly-total {
+  text-align: right;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.weekday-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 10px;
+}
+
+.weekday-name {
+  text-align: center;
+  font-weight: bold;
+  color: #64748b;
+  font-size: 0.9rem;
+  padding: 8px 0;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.calendar-cell {
+  aspect-ratio: 1;
+  padding: 5px;
+  border-radius: 5px;
+  background-color: #f8fafc;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.calendar-cell:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.calendar-cell.has-expenses {
+  cursor: pointer;
+}
+
+.calendar-cell.empty {
+  background-color: transparent;
+}
+
+.day-number {
+  position: absolute;
+  top: 5px;
+  left: 7px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.day-expenses {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding-top: 15px;
+}
+
+.expense-total {
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: #1e293b; /* Cor mais escura para melhor visibilidade */
+  background-color: rgba(255, 255, 255, 0.7); /* Fundo semitransparente */
+  padding: 2px 4px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+}
+
+.expense-count {
+  font-size: 0.75rem;
+  color: #475569; /* Cor mais escura para melhor visibilidade */
+  background-color: rgba(255, 255, 255, 0.5); /* Fundo semitransparente */
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+.calendar-cell.today {
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
+}
+
+.calendar-cell.day-high {
+  background-color: #fee2e2;
+}
+
+.calendar-cell.day-medium {
+  background-color: #fef3c7;
+}
+
+.calendar-cell.day-low {
+  background-color: #ecfdf5;
+}
+
+.calendar-legend {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.legend-color {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  margin-right: 5px;
+  display: inline-block;
+}
+
+.legend-color.day-high {
+  background-color: #fee2e2;
+}
+
+.legend-color.day-medium {
+  background-color: #fef3c7;
+}
+
+.legend-color.day-low {
+  background-color: #ecfdf5;
+}
+
+@media (max-width: 640px) {
+  .weekday-name {
+    font-size: 0.8rem;
+  }
+
+  .day-number {
+    font-size: 0.8rem;
+  }
+
+  .expense-total {
+    font-size: 0.7rem;
+  }
+
+  .expense-count {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .monthly-total {
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .calendar-cell {
+    padding: 2px;
+  }
+
+  .day-expenses {
+    padding-top: 12px;
+  }
+
+  .day-number {
+    font-size: 0.8rem;
+  }
+
+  .expense-total {
+    font-size: 0.7rem;
+  }
+
+  .expense-count {
+    font-size: 0.65rem;
+  }
+
+  .calendar-legend {
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-grid {
+    gap: 2px;
+  }
+
+  .expense-total {
+    font-size: 0.65rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .expense-count {
+    font-size: 0.6rem;
+  }
+
+  .weekday-name {
+    font-size: 0.7rem;
+    padding: 4px 0;
+  }
+
+  .day-number {
+    left: 3px;
+    top: 2px;
+  }
+
+  .calendar-legend {
+    margin-top: 10px;
+    gap: 5px;
+  }
+
+  .legend-color {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .expense-count {
+    display: none;
+  }
+
+  .calendar-header h3 {
+    font-size: 1rem;
+  }
+
+  .month-nav-button {
+    width: 25px;
+    height: 25px;
+  }
+}

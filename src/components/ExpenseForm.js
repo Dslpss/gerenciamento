@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+// Remover a importação não utilizada
 import { formatDateForInput } from "../utils/dateUtils";
 import { useExpenses } from "../contexts/ExpenseContext";
 
@@ -101,11 +102,18 @@ const ExpenseForm = ({ editingExpense, onClose }) => {
     }
 
     try {
+      // Corrigir problema de fuso horário na data
+      const dateParts = formData.date.split("-").map(Number);
+      const localDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+      const formattedDate = `${localDate.getFullYear()}-${String(
+        localDate.getMonth() + 1
+      ).padStart(2, "0")}-${String(localDate.getDate()).padStart(2, "0")}`;
+
       // Garantir que os dados sejam formatados corretamente
       const expenseData = {
         description: formData.description.trim(),
         amount: parseFloat(formData.amount),
-        date: formData.date,
+        date: formattedDate, // Usar a data corrigida para o fuso horário local
         category: formData.category,
         // Adicionar dados adicionais úteis
         createdAt: new Date().toISOString(),

@@ -1,0 +1,567 @@
+/* Melhorias na página de gastos */
+
+.expense-list-container {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 20px;
+  animation: fade-in 0.3s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eef2f6;
+  padding-bottom: 15px;
+}
+
+.list-header h2 {
+  margin: 0;
+  color: #2d3748;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.list-meta {
+  font-size: 0.95rem;
+  color: #64748b;
+  background-color: #f8fafc;
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+
+.list-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+  background: linear-gradient(to right, #f9fafb, #f1f5f9);
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 40px 12px 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  background-color: #fff;
+}
+
+.search-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.clear-search {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.clear-search:hover {
+  color: #475569;
+}
+
+.view-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.view-mode-toggle {
+  display: flex;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.view-button {
+  background-color: transparent;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  color: #64748b;
+}
+
+.view-button.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.items-per-page {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background-color: #fff;
+  color: #475569;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.items-per-page:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+/* Estilos para a lista */
+.expenses-list {
+  margin-bottom: 25px;
+}
+
+.expense-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.2s;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.expense-item:hover {
+  background-color: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.expense-item.confirm-delete {
+  background-color: #fef2f2;
+  border-left: 4px solid #ef4444;
+}
+
+.expense-details h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.expense-details p {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.category-tag {
+  display: inline-block;
+  background-color: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  margin-right: 10px;
+  transition: background-color 0.2s;
+}
+
+/* Tags coloridas para categorias diferentes */
+.category-tag.Alimentação {
+  background-color: #e9f5e9;
+  color: #166534;
+}
+
+.category-tag.Transporte {
+  background-color: #f0f9ff;
+  color: #0369a1;
+}
+
+.category-tag.Moradia {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.category-tag.Lazer {
+  background-color: #fae8ff;
+  color: #86198f;
+}
+
+.category-tag.Saúde {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.category-tag.Educação {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.category-tag.Vestuário {
+  background-color: #f5f3ff;
+  color: #5b21b6;
+}
+
+.date-info {
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+}
+
+.date-info::before {
+  content: "•";
+  margin-right: 8px;
+  color: #cbd5e1;
+}
+
+.expense-amount-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.amount {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 10px;
+  font-size: 1.05rem;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.actions .edit {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.actions .edit:hover {
+  background-color: #bfdbfe;
+}
+
+.actions .edit::before {
+  content: "✎";
+  font-size: 0.9rem;
+}
+
+.actions .delete {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.actions .delete:hover {
+  background-color: #fecaca;
+}
+
+.actions .delete::before {
+  content: "✕";
+  font-size: 0.9rem;
+}
+
+/* Estilos para o modo compacto */
+.expenses-list.compact .expense-item {
+  padding: 12px 15px;
+}
+
+.expense-item.compact {
+  display: block;
+  padding: 14px 18px;
+}
+
+.expense-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.expense-info strong {
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 3px;
+  color: #1e293b;
+}
+
+.meta-info {
+  font-size: 0.85rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.meta-info span:not(:last-child)::after {
+  content: "•";
+  margin-left: 8px;
+  color: #cbd5e1;
+}
+
+.expense-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
+  border: none;
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.edit-button {
+  color: #1e40af;
+  background-color: #dbeafe;
+}
+
+.edit-button:hover {
+  background-color: #bfdbfe;
+  transform: translateY(-2px);
+}
+
+.delete-button {
+  color: #b91c1c;
+  background-color: #fee2e2;
+}
+
+.delete-button:hover {
+  background-color: #fecaca;
+  transform: translateY(-2px);
+}
+
+/* Paginação */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 25px 0;
+  gap: 10px;
+}
+
+.page-button {
+  border: 1px solid #e2e8f0;
+  background-color: #fff;
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.page-button:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.page-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background-color: #f8fafc;
+}
+
+.page-info {
+  margin: 0 5px;
+  color: #64748b;
+  font-size: 0.9rem;
+  background-color: #f8fafc;
+  padding: 8px 15px;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.list-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 15px;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.showing-info {
+  background-color: #f8fafc;
+  padding: 8px 15px;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+  background-color: #f8fafc;
+  border-radius: 10px;
+  margin: 20px 0;
+}
+
+.empty-state p:first-child {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #475569;
+}
+
+.empty-state p:last-child {
+  font-size: 0.95rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .list-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .search-bar {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .expense-item {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .expense-amount-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 10px;
+    align-items: center;
+  }
+
+  .amount {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+  }
+
+  .expense-details h3 {
+    font-size: 1rem;
+  }
+
+  .category-tag {
+    font-size: 0.75rem;
+  }
+
+  .date-info {
+    font-size: 0.75rem;
+  }
+
+  .actions button {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+  }
+
+  .view-controls {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .expense-amount-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 8px;
+  }
+
+  .pagination-controls {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .page-button {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .page-info {
+    font-size: 0.8rem;
+  }
+
+  .list-footer {
+    font-size: 0.8rem;
+  }
+
+  .list-meta {
+    font-size: 0.8rem;
+  }
+
+  .expense-item {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 15px;
+  }
+}

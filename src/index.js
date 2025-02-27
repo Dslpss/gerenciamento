@@ -4,6 +4,10 @@ import "./index.css";
 import App from "./App";
 import { AuthProvider } from "./contexts/AuthContext";
 
+// Importar estilos
+import "./styles/global.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
+
 // Verificação da configuração do Firebase
 import { auth } from "./firebase/config";
 console.log("Status inicial do Firebase Auth:", {

@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
-// Removendo a dependência problemática
-// import { Chart } from "react-google-charts";
+import "../styles/AnnualReport.css"; // Adicione esta linha para importar os estilos
 
 const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -29,20 +28,23 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
   }, [expenses, monthlySalaries]);
 
   // Meses
-  const months = useMemo(() => [
-    "Janeiro",
-    "Fevereiro",
-    "Março",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro",
-  ], []);
+  const months = useMemo(
+    () => [
+      "Janeiro",
+      "Fevereiro",
+      "Março",
+      "Abril",
+      "Maio",
+      "Junho",
+      "Julho",
+      "Agosto",
+      "Setembro",
+      "Outubro",
+      "Novembro",
+      "Dezembro",
+    ],
+    []
+  );
 
   // Calcula dados mensais para o ano selecionado
   const annualData = useMemo(() => {
@@ -138,6 +140,9 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
     return `${percent.toFixed(1)}%`;
   };
 
+  // Na parte do gráfico de barras, vamos adicionar detecção para dispositivos móveis:
+  const isMobileDevice = window.innerWidth <= 480;
+
   return (
     <div className="annual-report">
       <h2>Relatório Anual de Gastos</h2>
@@ -198,49 +203,53 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
         <div className="chart-wrapper">
           <h3>Gastos vs. Salários Mensais</h3>
           <div className="simple-chart">
-            {annualData.monthlyData.map((data) => (
-              <div key={data.month} className="chart-bar-container">
-                <div className="chart-bar-label">{data.monthName}</div>
-                <div className="chart-bars">
-                  <div
-                    className="chart-bar salary-bar"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        (data.monthlySalary /
-                          (Math.max(
-                            ...annualData.monthlyData.map(
-                              (d) => d.monthlySalary
-                            )
-                          ) || 1)) *
-                          100
-                      )}%`,
-                    }}
-                    title={`Salário: ${formatAmount(data.monthlySalary)}`}>
-                    {formatAmount(data.monthlySalary)}
-                  </div>
-                  <div
-                    className={`chart-bar expense-bar ${
-                      data.totalExpense > data.monthlySalary ? "exceeded" : ""
-                    }`}
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        (data.totalExpense /
-                          (Math.max(
-                            ...annualData.monthlyData.map(
-                              (d) => d.monthlySalary
-                            )
-                          ) || 1)) *
-                          100
-                      )}%`,
-                    }}
-                    title={`Gastos: ${formatAmount(data.totalExpense)}`}>
-                    {formatAmount(data.totalExpense)}
+            {annualData.monthlyData.map((data) => {
+              // Encontrar o maior valor para normalizar as barras
+              const maxValue = Math.max(
+                ...annualData.monthlyData.map((d) =>
+                  Math.max(d.monthlySalary, d.totalExpense)
+                )
+              );
+
+              // Calcular larguras proporcionais com base no valor máximo
+              const salaryWidth =
+                maxValue > 0
+                  ? Math.max(
+                      10,
+                      Math.min(90, (data.monthlySalary / maxValue) * 90)
+                    )
+                  : 0;
+
+              const expenseWidth =
+                maxValue > 0
+                  ? Math.max(
+                      10,
+                      Math.min(90, (data.totalExpense / maxValue) * 90)
+                    )
+                  : 0;
+
+              return (
+                <div key={data.month} className="chart-bar-container">
+                  <div className="chart-bar-label">{data.monthName}</div>
+                  <div className="chart-bars">
+                    <div
+                      className="chart-bar salary-bar"
+                      style={{ width: `${salaryWidth}%` }}
+                      title={`Salário: ${formatAmount(data.monthlySalary)}`}>
+                      {formatAmount(data.monthlySalary)}
+                    </div>
+                    <div
+                      className={`chart-bar expense-bar ${
+                        data.totalExpense > data.monthlySalary ? "exceeded" : ""
+                      }`}
+                      style={{ width: `${expenseWidth}%` }}
+                      title={`Gastos: ${formatAmount(data.totalExpense)}`}>
+                      {formatAmount(data.totalExpense)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -259,9 +268,19 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
                     <div className="category-bar-container">
                       <div
                         className="category-bar"
-                        style={{ width: `${percentage}%` }}>
-                        {formatAmount(amount)}
+                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                        title={formatAmount(amount)}>
+                        {percentage > (isMobileDevice ? 15 : 10)
+                          ? isMobileDevice
+                            ? formatAmount(amount).replace("R$", "")
+                            : formatAmount(amount)
+                          : ""}
                       </div>
+                      {percentage <= 10 && (
+                        <div className="outside-bar-value">
+                          {formatAmount(amount)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
