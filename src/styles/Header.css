@@ -62,7 +62,7 @@
   background-color: rgba(255, 255, 255, 0.1);
   padding: 4px 12px;
   border-radius: 20px;
-  min-width: 160px;
+  min-width: 180px; /* Aumentado de 160px para acomodar os segundos */
 }
 
 .date {
@@ -75,6 +75,12 @@
   font-size: 1.1rem; /* Aumentado de 1rem */
   font-weight: 500;
   color: #fff;
+  /* Adicionar estilo para segundos */
+}
+
+.time span.seconds {
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 /* Seção da direita com informações e perfil - mais espaçamento */
@@ -274,7 +280,7 @@
 
   .datetime-display {
     padding: 3px 10px;
-    min-width: 140px;
+    min-width: 160px;
   }
 
   .header-right {
@@ -316,7 +322,7 @@
   }
 
   .datetime-display {
-    min-width: 120px;
+    min-width: 140px;
     padding: 2px 8px;
   }
 

@@ -1,9 +1,246 @@
 .expense-summary {
   background-color: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+}
+
+.expense-summary h2 {
+  margin-top: 0;
+  color: #2d3748;
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.expense-summary h3 {
+  color: #4a5568;
+  font-size: 1.3rem;
+  margin: 25px 0 15px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.summary-item {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.summary-label {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+
+.summary-value {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.summary-value.expense {
+  color: #e53e3e;
+}
+
+.summary-value.positive {
+  color: #38a169;
+}
+
+.summary-value.negative {
+  color: #e53e3e;
+}
+
+.budget-bar-container {
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.budget-label {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.budget-bar {
+  height: 10px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Simplificando o CSS da barra de progresso */
+.budget-progress {
+  height: 100%;
+  background-color: #38a169;
+  border-radius: 4px;
+  width: 0; /* Começa em zero */
+  transition: width 0.8s ease-out;
+}
+
+.budget-progress.exceeded {
+  background-color: #e53e3e;
+}
+
+/* Nova seção de estatísticas em barras */
+.stats-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.category-bars {
+  margin-bottom: 20px;
+}
+
+.category-bar-item {
+  margin-bottom: 12px;
+}
+
+.bar-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.bar-label {
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.bar-value {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.bar-container {
+  height: 10px;
+  background-color: #edf2f7;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.bar-percent {
+  font-size: 0.8rem;
+  text-align: right;
+  color: #718096;
+}
+
+/* Seção de métricas adicionais */
+.metric-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.metric-box {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  height: 100%;
+}
+
+.metric-title {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.metric-value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.metric-value.positive {
+  color: #38a169;
+}
+
+.metric-value.negative {
+  color: #e53e3e;
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .expense-summary {
+    padding: 15px;
+  }
+
+  .expense-summary h2 {
+    font-size: 1.4rem;
+  }
+
+  .expense-summary h3 {
+    font-size: 1.2rem;
+    margin: 20px 0 12px;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .metric-columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .expense-summary {
+    padding: 12px;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .metric-columns {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .summary-item {
+    padding: 12px;
+  }
+
+  .metric-box {
+    padding: 12px;
+  }
+
+  .summary-value {
+    font-size: 1.4rem;
+  }
+
+  .metric-value {
+    font-size: 1.2rem;
+  }
 }
 
 .budget-section {

@@ -129,6 +129,36 @@ const ExpenseList = ({ onEdit, filters }) => {
     setCurrentPage(1); // Reset para primeira página ao buscar
   };
 
+  // Função para obter cor baseada na categoria
+  const getCategoryColor = (category) => {
+    const categoryColors = {
+      Alimentação: "#e74c3c",
+      Moradia: "#3498db",
+      Transporte: "#f39c12",
+      Lazer: "#2ecc71",
+      Saúde: "#9b59b6",
+      Educação: "#1abc9c",
+      Vestuário: "#e67e22",
+      Outros: "#95a5a6",
+    };
+
+    return categoryColors[category] || "#95a5a6"; // Cor padrão se não encontrar
+  };
+
+  // Função para calcular cor de texto contrastante
+  const getContrastColor = (hexColor) => {
+    // Converter hex para RGB
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+
+    // Calcular luminância (fórmula padrão)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Retornar branco para cores escuras e preto para cores claras
+    return luminance > 0.5 ? "#000000" : "#ffffff";
+  };
+
   // Renderizar controles de paginação
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -181,8 +211,16 @@ const ExpenseList = ({ onEdit, filters }) => {
         <div className="expense-info">
           <strong>{expense.description}</strong>
           <div className="meta-info">
-            {formatAmount(expense.amount)} • {expense.category} •{" "}
-            {formatDate(expense.date)}
+            <span
+              className="compact-category"
+              style={{
+                backgroundColor: getCategoryColor(expense.category),
+                color: getContrastColor(getCategoryColor(expense.category)),
+              }}>
+              {expense.category}
+            </span>
+            <span>{formatAmount(expense.amount)}</span>
+            <span>{formatDate(expense.date)}</span>
           </div>
         </div>
         <div className="expense-actions">
@@ -213,7 +251,14 @@ const ExpenseList = ({ onEdit, filters }) => {
       <div className="expense-details">
         <h3>{expense.description}</h3>
         <p>
-          <span className="category-tag">{expense.category}</span>
+          <span
+            className="category-tag"
+            style={{
+              backgroundColor: getCategoryColor(expense.category),
+              color: getContrastColor(getCategoryColor(expense.category)),
+            }}>
+            {expense.category}
+          </span>
           <span className="date-info">{formatDate(expense.date)}</span>
         </p>
       </div>

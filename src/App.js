@@ -27,7 +27,7 @@ function AppContent() {
   const [editingExpense, setEditingExpense] = useState(null);
   const [filters, setFilters] = useState({
     category: "todas",
-    month: "todos",
+    month: new Date().getMonth() + 1 + "", // Converter para string e selecionar mês atual por padrão
     year: new Date().getFullYear().toString(),
   });
   const [salary, setSalary] = useState(0);
@@ -213,6 +213,11 @@ function AppContent() {
     setEditingExpense(expense);
   };
 
+  // Compartilhar os mesmos filtros entre todas as visualizações
+  const updateFilters = (newFilters) => {
+    setFilters(newFilters);
+  };
+
   // Filtrar os gastos com base nos filtros aplicados
   const filteredExpenses = useMemo(() => {
     return expenses.filter((expense) => {
@@ -276,18 +281,22 @@ function AppContent() {
               salary={getCurrentCycleSalary()}
               salaryDay={salaryDay}
             />
-            <ExpenseCalendar onDayClick={handleCalendarDayClick} />
+            <ExpenseCalendar
+              onDayClick={handleCalendarDayClick}
+              filters={filters}
+            />
             <ExpenseSummary
               expenses={filteredExpenses}
               salary={getApplicableSalary()}
               isMonthlyView={true}
+              filters={filters} // Passando os filtros para o ExpenseSummary
             />
           </div>
         );
       case "expenses":
         return (
           <div className="page-content">
-            <ExpenseFilter filters={filters} setFilters={setFilters} />
+            <ExpenseFilter filters={filters} setFilters={updateFilters} />
             <ExpenseList onEdit={startEditExpense} filters={filters} />
           </div>
         );

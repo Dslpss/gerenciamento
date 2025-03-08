@@ -193,15 +193,22 @@
 
 .category-tag {
   display: inline-block;
-  background-color: #f1f5f9;
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 0.85rem;
-  margin-right: 10px;
-  transition: background-color 0.2s;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-right: 8px;
 }
 
-/* Tags coloridas para categorias diferentes */
+.compact-category {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-right: 6px;
+}
+
 .category-tag.Alimentação {
   background-color: #e9f5e9;
   color: #166534;
@@ -331,12 +338,11 @@
 }
 
 .meta-info {
-  font-size: 0.85rem;
-  color: #64748b;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
+  font-size: 0.8rem;
+  color: #64748b;
 }
 
 .meta-info span:not(:last-child)::after {

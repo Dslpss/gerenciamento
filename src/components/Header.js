@@ -11,26 +11,31 @@ const Header = () => {
   const [totalThisMonth, setTotalThisMonth] = useState(0);
   const menuRef = useRef(null);
 
-  // Atualizar data e hora a cada minuto
+  // Atualizar data e hora a cada segundo em vez de a cada minuto
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
-    }, 60000);
+    }, 1000); // Atualiza a cada 1 segundo
     return () => clearInterval(timer);
   }, []);
 
-  // Calcular gastos do mês atual
+  // Calcular gastos do mês atual considerando apenas o mês atual
   useEffect(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
     const thisMonthExpenses = expenses.filter((expense) => {
-      const expenseDate = new Date(expense.date);
-      return (
-        expenseDate.getMonth() === currentMonth &&
-        expenseDate.getFullYear() === currentYear
-      );
+      try {
+        const expenseDate = new Date(expense.date);
+        return (
+          expenseDate.getMonth() === currentMonth &&
+          expenseDate.getFullYear() === currentYear
+        );
+      } catch (e) {
+        console.error("Erro ao processar data da despesa:", e);
+        return false;
+      }
     });
 
     const total = thisMonthExpenses.reduce(
@@ -86,10 +91,12 @@ const Header = () => {
     });
   };
 
+  // Formatar hora incluindo segundos
   const formatTime = (date) => {
     return date.toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
+      second: "2-digit", // Adicionado para mostrar segundos
     });
   };
 

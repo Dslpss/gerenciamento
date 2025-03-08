@@ -1,15 +1,36 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useExpenses } from "../contexts/ExpenseContext";
 import "../styles/ExpenseCalendar.css";
 import { parseLocalDate } from "../utils/dateUtils";
 
-const ExpenseCalendar = ({ onDayClick }) => {
+const ExpenseCalendar = ({ onDayClick, filters }) => {
   const { expenses } = useExpenses();
   const today = new Date();
 
   // Estado para controlar qual mês/ano está sendo exibido
   const [displayMonth, setDisplayMonth] = useState(today.getMonth());
   const [displayYear, setDisplayYear] = useState(today.getFullYear());
+
+  // Modificar para usar filtros de mês/ano se disponíveis
+  useEffect(() => {
+    if (filters) {
+      // Se tem filtro de mês, usar ele
+      if (filters.month !== "todos") {
+        const month = parseInt(filters.month) - 1; // -1 porque os meses em JS vão de 0-11
+        if (!isNaN(month) && month >= 0 && month <= 11) {
+          setDisplayMonth(month);
+        }
+      }
+
+      // Se tem filtro de ano, usar ele
+      if (filters.year !== "todos") {
+        const year = parseInt(filters.year);
+        if (!isNaN(year) && year > 2000 && year < 2100) {
+          setDisplayYear(year);
+        }
+      }
+    }
+  }, [filters]);
 
   // Calcular dias no mês e dia da semana do primeiro dia
   const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();
