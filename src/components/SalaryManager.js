@@ -8,6 +8,8 @@ const SalaryManager = ({
   updateSalary,
   updateMonthlySalary,
   addSalaryHistoryEntry,
+  salaryDay = 5,
+  updateSalaryDay,
 }) => {
   const [editMode, setEditMode] = useState(false);
   const [historyMode, setHistoryMode] = useState(false);
@@ -20,6 +22,7 @@ const SalaryManager = ({
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackType, setFeedbackType] = useState("success"); // ou "warning"
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newSalaryDay, setNewSalaryDay] = useState(salaryDay.toString());
 
   // Meses para seleção
   const months = [
@@ -196,6 +199,26 @@ const SalaryManager = ({
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("pt-BR");
+  };
+
+  const handleSaveSalaryDay = () => {
+    const day = parseInt(newSalaryDay);
+    if (!isNaN(day) && day >= 1 && day <= 31) {
+      updateSalaryDay(day);
+      addSalaryHistoryEntry({
+        date: new Date().toISOString(),
+        type: "salaryDayUpdate",
+        value: day,
+        previous: salaryDay,
+      });
+      setFeedbackMessage("Dia de pagamento atualizado com sucesso!");
+      setFeedbackType("success");
+      setShowFeedback(true);
+    } else {
+      setFeedbackMessage("Por favor, insira um dia válido (1-31)");
+      setFeedbackType("error");
+      setShowFeedback(true);
+    }
   };
 
   // Interface de formulário
@@ -383,6 +406,28 @@ const SalaryManager = ({
           <div className="salary-item">
             <strong>Salário base definido: </strong>
             <span className="salary-value">{formatAmount(salary)}</span>
+          </div>
+
+          <div className="salary-section">
+            <h3>Dia de Recebimento do Salário</h3>
+            <div className="input-group">
+              <label>Dia do mês:</label>
+              <div className="input-with-button">
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={newSalaryDay}
+                  onChange={(e) => setNewSalaryDay(e.target.value)}
+                  placeholder="Dia do pagamento"
+                />
+                <button onClick={handleSaveSalaryDay}>Salvar</button>
+              </div>
+            </div>
+            <p className="help-text">
+              Esse é o dia do mês em que você normalmente recebe seu salário.
+              Essa informação ajuda a melhorar a projeção financeira do mês.
+            </p>
           </div>
 
           <div className="salary-actions">

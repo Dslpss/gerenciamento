@@ -1,27 +1,53 @@
 import React from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useExpenses } from "../contexts/ExpenseContext";
 import "../styles/DashboardSummary.css";
 
-const DashboardSummary = ({ salary }) => {
+const DashboardSummary = ({ salary, salaryDay = 5 }) => {
   const { expenses } = useExpenses();
 
   // Dados para o mês atual
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+  const currentDay = currentDate.getDate();
 
-  // Filtrar despesas do mês atual
-  const currentMonthExpenses = expenses.filter((expense) => {
-    const expenseDate = new Date(expense.date);
-    return (
-      expenseDate.getMonth() === currentMonth &&
-      expenseDate.getFullYear() === currentYear
+  // Determinar início e fim do ciclo atual de salário
+  const determinarCiclo = () => {
+    // Data de início do ciclo atual (dia do salário do mês atual ou mês anterior)
+    let inicio = new Date(currentYear, currentMonth, salaryDay);
+
+    // Se ainda não chegamos no dia do pagamento deste mês, o ciclo começou no mês anterior
+    if (currentDay < salaryDay) {
+      inicio = new Date(currentYear, currentMonth - 1, salaryDay);
+    }
+
+    // Data de fim do ciclo é o dia anterior ao próximo pagamento
+    let fim = new Date(
+      currentYear,
+      currentMonth + (currentDay >= salaryDay ? 1 : 0),
+      salaryDay - 1
     );
+
+    // Calcular dias totais do ciclo e dias passados
+    const diasTotais = Math.round((fim - inicio) / (1000 * 60 * 60 * 24)) + 1;
+    const diasPassados =
+      Math.round((currentDate - inicio) / (1000 * 60 * 60 * 24)) + 1;
+    const diasRestantes = diasTotais - diasPassados;
+
+    return { inicio, fim, diasTotais, diasPassados, diasRestantes };
+  };
+
+  const ciclo = determinarCiclo();
+
+  // Filtrar despesas do ciclo atual
+  const currentCycleExpenses = expenses.filter((expense) => {
+    const expenseDate = new Date(expense.date);
+    return expenseDate >= ciclo.inicio && expenseDate <= currentDate;
   });
 
-  // Calcular total gasto este mês
-  const totalSpent = currentMonthExpenses.reduce(
+  // Calcular total gasto neste ciclo
+  const totalSpent = currentCycleExpenses.reduce(
     (total, expense) => total + expense.amount,
     0
   );
@@ -29,13 +55,9 @@ const DashboardSummary = ({ salary }) => {
   // Calcular percentual do salário gasto
   const percentageSpent = salary > 0 ? (totalSpent / salary) * 100 : 0;
 
-  // Calcular dias restantes no mês
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const daysRemaining = daysInMonth - currentDate.getDate();
-
   // Agrupar por categoria para o gráfico
   const categoryData = {};
-  currentMonthExpenses.forEach((expense) => {
+  currentCycleExpenses.forEach((expense) => {
     const category = expense.category || "Outros";
     if (!categoryData[category]) {
       categoryData[category] = 0;
@@ -57,6 +79,8 @@ const DashboardSummary = ({ salary }) => {
     "#FF8042",
     "#8884d8",
     "#82ca9d",
+    "#a4de6c",
+    "#d0ed57",
   ];
 
   // Formatar moeda
@@ -67,17 +91,64 @@ const DashboardSummary = ({ salary }) => {
     }).format(amount);
   };
 
-  // Calcular média diária de gasto
-  const daysPassed = currentDate.getDate();
-  const dailyAverage = daysPassed > 0 ? totalSpent / daysPassed : 0;
+  // Calcular média diária de gasto baseada nos gastos do ciclo atual
+  const dailyAverage =
+    ciclo.diasPassados > 0 ? totalSpent / ciclo.diasPassados : 0;
 
-  // Projeção até o fim do mês
-  const projectedTotal = totalSpent + dailyAverage * daysRemaining;
+  // Limitar a projeção para evitar valores absurdos
+  const calcularProjecaoRealista = () => {
+    // Projeção básica
+    const projecaoBasica = dailyAverage * ciclo.diasRestantes;
+
+    // Aplicar limites na projeção para evitar valores absurdos
+    // 1. Limite baseado no histórico: não projetar mais que 2x o valor já gasto
+    const limiteHistorico = totalSpent * 2;
+
+    // 2. Limite baseado no salário: não projetar mais que 80% do salário restante
+    const salarioRestante = salary - totalSpent;
+    const limiteSalario = salarioRestante > 0 ? salarioRestante * 0.8 : 0;
+
+    // 3. Limite absoluto: não projetar mais que 3x a média diária multiplicado pelos dias restantes
+    const limiteAbsoluto = dailyAverage * 3 * ciclo.diasRestantes;
+
+    // Escolher o menor dos limites para aplicar
+    const limiteProjecao = Math.min(
+      limiteHistorico,
+      limiteSalario,
+      limiteAbsoluto
+    );
+
+    // Aplicar o limite
+    return Math.min(projecaoBasica, limiteProjecao);
+  };
+
+  // Projeção de gastos APENAS para os dias restantes do ciclo
+  const projectionForRemainingDays = calcularProjecaoRealista();
+  const projectedTotal = totalSpent + projectionForRemainingDays;
+
+  // Verifica se ultrapassará o orçamento do ciclo
   const willOverspend = projectedTotal > salary;
+  const saldoFinal = salary - projectedTotal;
+
+  // Formatar data para exibição
+  const formatDate = (date) => {
+    return date.toLocaleDateString("pt-BR");
+  };
+
+  // Detectar se é mobile
+  const isMobile = window.innerWidth <= 480;
 
   return (
     <div className="dashboard-summary">
-      <h2>Resumo do Mês Atual</h2>
+      <h2>Resumo do Ciclo Atual</h2>
+      <div className="cycle-info">
+        <span>
+          Ciclo: {formatDate(ciclo.inicio)} até {formatDate(ciclo.fim)}
+        </span>
+        <span className="cycle-progress">
+          {ciclo.diasPassados} de {ciclo.diasTotais} dias
+        </span>
+      </div>
 
       <div className="summary-cards">
         <div className="summary-card">
@@ -91,18 +162,25 @@ const DashboardSummary = ({ salary }) => {
         <div className="summary-card">
           <h3>Média diária</h3>
           <div className="amount">{formatCurrency(dailyAverage)}</div>
-          <div className="info">Baseado nos últimos {daysPassed} dias</div>
+          <div className="info">
+            Com base nos últimos {ciclo.diasPassados} dias
+          </div>
         </div>
 
         <div className={`summary-card ${willOverspend ? "warning" : ""}`}>
-          <h3>Projeção do mês</h3>
+          <h3>Projeção do ciclo</h3>
           <div className="amount">{formatCurrency(projectedTotal)}</div>
           <div className="info">
             {willOverspend
-              ? `Você excederá o orçamento em ${formatCurrency(
-                  projectedTotal - salary
-                )}`
-              : `Você economizará ${formatCurrency(salary - projectedTotal)}`}
+              ? `Você excederá o orçamento em ${formatCurrency(-saldoFinal)}`
+              : `Você economizará ${formatCurrency(saldoFinal)}`}
+          </div>
+          <div className="projection-detail">
+            <span className="actual">Atual: {formatCurrency(totalSpent)}</span>
+            <span className="plus">+</span>
+            <span className="projected">
+              Projeção: {formatCurrency(projectionForRemainingDays)}
+            </span>
           </div>
         </div>
       </div>
@@ -110,52 +188,55 @@ const DashboardSummary = ({ salary }) => {
       <div className="chart-section">
         <h3>Gastos por Categoria</h3>
         {chartData.length > 0 ? (
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={85}
-                  innerRadius={40}
-                  fill="#8884d8"
-                  dataKey="value">
-                  {chartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Legend
-                  layout="horizontal"
-                  verticalAlign="bottom"
-                  align="center"
-                  wrapperStyle={{
-                    paddingTop: "20px",
-                    width: "100%",
-                  }}
-                  formatter={(value, entry, index) => {
-                    const category = chartData[index].name;
-                    const amount = chartData[index].value;
-                    const percent =
-                      ((amount / totalSpent) * 100).toFixed(0) + "%";
-                    return (
-                      <span className="custom-legend-item">
-                        <span className="category-name">{category}:</span>
-                        <span className="category-percent">{percent}</span>
-                        <span className="category-amount">
-                          ({formatCurrency(amount)})
-                        </span>
+          <>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={isMobile ? 60 : 80}
+                    innerRadius={isMobile ? 20 : 30}
+                    fill="#8884d8"
+                    dataKey="value">
+                    {chartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Substituir Legend por nosso próprio componente de legenda */}
+            <div className="legend-container">
+              {chartData.map((entry, index) => {
+                const percent = ((entry.value / totalSpent) * 100).toFixed(0);
+                return (
+                  <div
+                    key={`legend-${index}`}
+                    className="custom-legend-item"
+                    style={{
+                      borderLeft: `4px solid ${COLORS[index % COLORS.length]}`,
+                    }}>
+                    <span className="category-name">{entry.name}</span>
+                    <div>
+                      <span className="category-percent">{percent}%</span>
+                      <span className="category-amount">
+                        {isMobile
+                          ? formatCurrency(entry.value)
+                          : ` (${formatCurrency(entry.value)})`}
                       </span>
-                    );
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         ) : (
           <p className="no-data">Nenhum gasto registrado este mês</p>
         )}
@@ -165,8 +246,8 @@ const DashboardSummary = ({ salary }) => {
         <h3>Dicas Financeiras</h3>
         {willOverspend ? (
           <div className="tip warning-tip">
-            ⚠️ No ritmo atual, você gastará mais do que seu orçamento este mês.
-            Considere reduzir despesas na categoria{" "}
+            ⚠️ No ritmo atual, você gastará mais do que seu orçamento neste
+            ciclo. Considere reduzir despesas na categoria{" "}
             {Object.entries(categoryData)
               .sort((a, b) => b[1] - a[1])
               .map(([category]) => category)[0] || "principal"}
@@ -174,12 +255,13 @@ const DashboardSummary = ({ salary }) => {
           </div>
         ) : percentageSpent > 75 ? (
           <div className="tip caution-tip">
-            ⚠️ Você já gastou mais de 75% do seu orçamento. Atente-se aos gastos
-            nas próximas semanas.
+            ⚠️ Você já gastou mais de 75% do seu salário neste ciclo. Atente-se
+            aos gastos nos próximos {ciclo.diasRestantes} dias.
           </div>
         ) : (
           <div className="tip success-tip">
-            ✅ Você está controlando bem seus gastos este mês! Continue assim.
+            ✅ Você está controlando bem seus gastos neste ciclo! Continue assim
+            para os próximos {ciclo.diasRestantes} dias.
           </div>
         )}
       </div>

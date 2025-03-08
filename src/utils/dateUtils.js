@@ -58,18 +58,10 @@ export const normalizeDate = (date) => {
  * @returns {string} String de data formatada como YYYY-MM-DD
  */
 export const formatDateForInput = (date) => {
-  const dateObj = typeof date === "string" ? new Date(date) : date;
-
-  // Se a data for inválida, retornar a data atual formatada
-  if (isNaN(dateObj.getTime())) {
-    return new Date().toISOString().split("T")[0];
-  }
-
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-  const day = String(dateObj.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  const parsedDate = parseLocalDate(date);
+  return `${parsedDate.getFullYear()}-${String(
+    parsedDate.getMonth() + 1
+  ).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
 };
 
 /**
@@ -93,16 +85,9 @@ export const isSameDay = (date1, date2) => {
  * @param {string} isoString - String de data no formato ISO
  * @returns {string} Data formatada para exibição
  */
-export const formatDateForDisplay = (isoString) => {
-  if (!isoString) return "";
-
-  try {
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return "";
-    return date.toLocaleDateString("pt-BR");
-  } catch {
-    return "";
-  }
+export const formatDateForDisplay = (date) => {
+  const parsedDate = parseLocalDate(date);
+  return parsedDate.toLocaleDateString("pt-BR");
 };
 
 /**
@@ -132,22 +117,32 @@ export const ensureLocalDate = (dateStr) => {
 };
 
 /**
- * Converte uma string de data para um objeto Date no fuso horário local
- *
- * @param {string} dateStr - String de data no formato YYYY-MM-DD
- * @returns {Date} Objeto Date no fuso horário local
+ * Converte uma string de data para um objeto Date, garantindo compatibilidade com fusos horários
+ * @param {string} dateString - String de data no formato ISO ou similar
+ * @returns {Date} - Objeto Date
  */
-export const parseLocalDate = (dateStr) => {
-  if (!dateStr) return new Date();
+export const parseLocalDate = (dateString) => {
+  if (!dateString) return new Date();
 
   try {
-    // Dividir a string de data em componentes
-    const [year, month, day] = dateStr.split("-").map(Number);
+    // Se já for um objeto Date, retornar o próprio objeto
+    if (dateString instanceof Date) return dateString;
 
-    // Criar data usando componentes para evitar conversões de fuso horário
-    return new Date(year, month - 1, day);
-  } catch (error) {
-    console.error("Erro ao analisar data local:", error);
+    // Verificar formato YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    // Para outros formatos, tentar criar o objeto Date diretamente
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      console.warn("Data inválida:", dateString);
+      return new Date(); // Fallback para data atual
+    }
+    return date;
+  } catch (e) {
+    console.error("Erro ao processar data:", e);
     return new Date();
   }
 };

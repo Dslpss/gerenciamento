@@ -6,6 +6,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 
 // Importar estilos
 import "./styles/global.css";
+import "./styles/DashboardSummary.css"; // Adicione esta linha se não existir
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
 // Verificação da configuração do Firebase

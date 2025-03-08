@@ -5,7 +5,7 @@
   --danger-color: #e74c3c;
   --warning-color: #f39c12;
   --text-color: #333;
-  --background-light: #f5f5f5;
+  --background-light: #f0f2f5; /* Cor de fundo mais suave */
   --card-background: #ffffff;
   --border-color: #e1e1e1;
 }
@@ -89,6 +89,21 @@ select {
   border: 1px solid #f5c6cb;
 }
 
+/* Componentes do gráfico para melhor responsividade */
+.chart-container {
+  width: 100%;
+  overflow-x: hidden;
+  margin-bottom: 20px;
+}
+
+.dashboard-summary .chart-section {
+  margin-top: 25px;
+}
+
+.dashboard-summary .recharts-responsive-container {
+  margin: 0 auto;
+}
+
 /* Responsividade Global */
 html {
   font-size: 16px;
@@ -116,6 +131,28 @@ html {
   select,
   textarea {
     font-size: 16px; /* Evita zoom automático em iOS */
+  }
+
+  /* Melhorias para gráficos */
+  .chart-section {
+    padding: 0;
+  }
+
+  .recharts-legend-item {
+    display: flex;
+    margin-bottom: 5px !important;
+  }
+
+  .custom-legend-item {
+    font-size: 0.85rem;
+    margin: 4px 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .category-name {
+    margin-right: 5px;
   }
 }
 
@@ -145,5 +182,51 @@ html {
   .card,
   .expense-item {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Melhorias específicas para gráficos em telas pequenas */
+  .chart-section {
+    margin: 15px -10px;
+  }
+
+  .recharts-wrapper {
+    margin: 0 auto;
+  }
+
+  /* Ajustes de fonte para legenda */
+  .recharts-legend-item-text,
+  .custom-legend-item {
+    font-size: 0.75rem;
+  }
+
+  /* Tornar a legenda do gráfico mais compacta */
+  .custom-legend-item {
+    display: block;
+    margin: 3px 0;
+  }
+
+  .category-percent,
+  .category-amount {
+    display: inline-block;
+    margin-left: 5px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .recharts-legend-wrapper {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  /* Mais espaço para o conteúdo em telas muito pequenas */
+  .dashboard-summary .summary-cards {
+    grid-gap: 10px;
+  }
+
+  /* Reduzir tamanho dos cabeçalhos */
+  .dashboard-summary h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
   }
 }

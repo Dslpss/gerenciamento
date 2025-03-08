@@ -2,55 +2,65 @@ import React, { useState, useMemo } from "react";
 import { useExpenses } from "../contexts/ExpenseContext";
 import "../styles/ExpenseList.css";
 import LoadingIndicator from "./LoadingIndicator";
-import { parseLocalDate } from "../utils/dateUtils"; // Adicionar esta importação
+import { parseLocalDate } from "../utils/dateUtils";
 
-const ExpenseList = ({ onEdit }) => {
+const ExpenseList = ({ onEdit, filters }) => {
   const { expenses, deleteExpense, loading } = useExpenses();
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // Padrão: 10 itens por página
-  const [viewMode, setViewMode] = useState("normal"); // "normal" ou "compact"
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [viewMode, setViewMode] = useState("normal");
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
 
-  // Ordenar e filtrar gastos
+  // Filtrar e ordenar despesas
   const filteredExpenses = useMemo(() => {
-    // Primeiro filtra por termo de busca
-    let filtered = expenses;
+    // Aplicar filtro de busca
+    let result = expenses;
+
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      filtered = expenses.filter(
+      result = result.filter(
         (expense) =>
           expense.description?.toLowerCase().includes(search) ||
           expense.category?.toLowerCase().includes(search)
       );
     }
 
-    // Então ordena por data
-    const sorted = [...filtered].sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
-    );
+    // Aplicar filtros de categoria, mês e ano
+    result = result.filter((expense) => {
+      // Verificar se a despesa tem uma data válida
+      if (!expense.date) return false;
 
-    // Detecta e corrige IDs duplicados
-    const uniqueIds = new Set();
-    const result = sorted.map((expense) => {
-      // Se o ID já existe ou está ausente, gerar um novo
-      if (!expense.id || uniqueIds.has(expense.id)) {
-        const newId = `${Date.now()}_${Math.random()
-          .toString(36)
-          .substr(2, 9)}`;
-        console.log(
-          `ID duplicado ou ausente detectado, substituindo por: ${newId}`
-        );
-        return { ...expense, id: newId };
-      }
+      // Converter a string de data em objeto Date
+      const expenseDate = parseLocalDate(expense.date);
+      if (isNaN(expenseDate.getTime())) return false;
 
-      // Adicionar ID ao conjunto de IDs vistos
-      uniqueIds.add(expense.id);
-      return expense;
+      // Extrair mês (1-12) e ano da despesa
+      const expenseMonth = expenseDate.getMonth() + 1; // getMonth() retorna 0-11
+      const expenseYear = expenseDate.getFullYear().toString();
+
+      // Aplicar filtro de categoria
+      const categoryMatch =
+        filters.category === "todas" || expense.category === filters.category;
+
+      // Aplicar filtro de mês (converter para string para comparação)
+      const monthMatch =
+        filters.month === "todos" || expenseMonth.toString() === filters.month;
+
+      // Aplicar filtro de ano
+      const yearMatch =
+        filters.year === "todos" || expenseYear === filters.year;
+
+      return categoryMatch && monthMatch && yearMatch;
     });
 
-    return result;
-  }, [expenses, searchTerm]);
+    // Ordenar por data (mais recente primeiro)
+    return [...result].sort((a, b) => {
+      const dateA = parseLocalDate(a.date);
+      const dateB = parseLocalDate(b.date);
+      return dateB - dateA;
+    });
+  }, [expenses, searchTerm, filters]);
 
   // Calcular paginação
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);

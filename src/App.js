@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import ExpenseForm from "./components/ExpenseForm";
 import ExpenseList from "./components/ExpenseList";
@@ -31,6 +31,7 @@ function AppContent() {
     year: new Date().getFullYear().toString(),
   });
   const [salary, setSalary] = useState(0);
+  const [salaryDay, setSalaryDay] = useState(5); // Dia padrão do pagamento
   const [monthlySalaries, setMonthlySalaries] = useState({});
   const [salaryHistory, setSalaryHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -136,6 +137,38 @@ function AppContent() {
     }
   };
 
+  // Atualizar o dia de recebimento do salário
+  const updateSalaryDay = async (day) => {
+    try {
+      if (!currentUser) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      console.log("Atualizando dia do pagamento para:", day);
+
+      // Atualizar estado local primeiro
+      setSalaryDay(day);
+
+      // Atualizar no Firestore
+      try {
+        await atualizarDadosSalario(currentUser.uid, {
+          defaultSalary: salary,
+          salaryDay: day,
+          monthlySalaries,
+          salaryHistory,
+        });
+
+        console.log("Dia do pagamento atualizado com sucesso no Firestore");
+      } catch (firebaseError) {
+        console.warn("Falha ao salvar no Firebase:", firebaseError);
+        console.log("Dia do pagamento atualizado apenas localmente");
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar dia do pagamento:", error);
+      alert("Erro ao atualizar dia do pagamento: " + error.message);
+    }
+  };
+
   // Atualizar um salário mensal específico
   const updateMonthlySalary = (month, year, amount) => {
     const key = `${year}-${month}`;
@@ -156,24 +189,59 @@ function AppContent() {
     return monthlySalaries[key] || salary;
   };
 
+  // Determinar o salário do ciclo atual
+  const getCurrentCycleSalary = () => {
+    // Determinar o início do ciclo atual com base no dia do salário
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    const currentDay = currentDate.getDate();
+
+    // Se estamos antes do dia de pagamento, o salário deste ciclo é do mês anterior
+    if (currentDay < salaryDay) {
+      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+      return getMonthlySalary(previousMonth + 1, previousYear); // +1 porque os meses são 1-12 no objeto monthlySalaries
+    }
+
+    // Senão, é o salário do mês atual
+    return getMonthlySalary(currentMonth + 1, currentYear);
+  };
+
   // Iniciar edição de um gasto
   const startEditExpense = (expense) => {
     setEditingExpense(expense);
   };
 
   // Filtrar os gastos com base nos filtros aplicados
-  const filteredExpenses = expenses.filter((expense) => {
-    const expenseDate = new Date(expense.date);
-    const expenseMonth = expenseDate.getMonth() + 1;
-    const expenseYear = expenseDate.getFullYear().toString();
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((expense) => {
+      // Verificar se a despesa tem uma data válida
+      if (!expense.date) return false;
 
-    return (
-      (filters.category === "todas" || expense.category === filters.category) &&
-      (filters.month === "todos" ||
-        expenseMonth.toString() === filters.month) &&
-      (filters.year === "todos" || expenseYear === filters.year)
-    );
-  });
+      // Converter a string de data em objeto Date
+      const expenseDate = new Date(expense.date);
+      if (isNaN(expenseDate.getTime())) return false;
+
+      // Extrair mês (1-12) e ano da despesa
+      const expenseMonth = expenseDate.getMonth() + 1; // getMonth() retorna 0-11
+      const expenseYear = expenseDate.getFullYear().toString();
+
+      // Aplicar filtro de categoria
+      const categoryMatch =
+        filters.category === "todas" || expense.category === filters.category;
+
+      // Aplicar filtro de mês (converter para string para comparação)
+      const monthMatch =
+        filters.month === "todos" || expenseMonth.toString() === filters.month;
+
+      // Aplicar filtro de ano
+      const yearMatch =
+        filters.year === "todos" || expenseYear === filters.year;
+
+      return categoryMatch && monthMatch && yearMatch;
+    });
+  }, [expenses, filters]);
 
   // Determinar se estamos visualizando dados de um mês específico
   const isViewingMonthData = filters.month !== "todos";
@@ -204,7 +272,10 @@ function AppContent() {
       case "dashboard":
         return (
           <div className="page-content">
-            <DashboardSummary salary={getApplicableSalary()} />
+            <DashboardSummary
+              salary={getCurrentCycleSalary()}
+              salaryDay={salaryDay}
+            />
             <ExpenseCalendar onDayClick={handleCalendarDayClick} />
             <ExpenseSummary
               expenses={filteredExpenses}
@@ -217,7 +288,7 @@ function AppContent() {
         return (
           <div className="page-content">
             <ExpenseFilter filters={filters} setFilters={setFilters} />
-            <ExpenseList onEdit={startEditExpense} />
+            <ExpenseList onEdit={startEditExpense} filters={filters} />
           </div>
         );
       case "reports":
@@ -235,9 +306,11 @@ function AppContent() {
           <div className="page-content">
             <SalaryManager
               salary={salary}
+              salaryDay={salaryDay}
               monthlySalaries={monthlySalaries}
               salaryHistory={salaryHistory}
               updateSalary={updateSalary}
+              updateSalaryDay={updateSalaryDay}
               updateMonthlySalary={updateMonthlySalary}
               addSalaryHistoryEntry={addSalaryHistoryEntry}
             />

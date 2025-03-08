@@ -1,5 +1,5 @@
 import React from "react";
-import "../styles/ExpenseFilter.css"; // Adicione este import
+import "../styles/ExpenseFilter.css";
 
 const ExpenseFilter = ({ filters, setFilters }) => {
   const months = [

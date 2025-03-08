@@ -1,38 +1,41 @@
+/* Estilo base */
 .dashboard-summary {
   background-color: #fff;
-  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-summary h2 {
   margin-top: 0;
-  color: #333;
-  font-size: 1.5rem;
+  color: #2d3748;
+  font-size: 1.6rem;
   margin-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e2e8f0;
   padding-bottom: 10px;
 }
 
+.dashboard-summary h3 {
+  color: #4a5568;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+}
+
+/* Cards de resumo */
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
 
 .summary-card {
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
   border-radius: 8px;
   padding: 15px;
   text-align: center;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.summary-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .summary-card h3 {
@@ -64,48 +67,67 @@
   color: #dc2626;
 }
 
+/* Seção do gráfico completamente reformulada */
 .chart-section {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  margin-top: 20px;
   position: relative;
+  /* Remover padding excessivo */
+  padding: 0;
 }
 
 .chart-section h3 {
-  margin-top: 0;
-  color: #555;
-  font-size: 1.1rem;
   text-align: center;
-  margin-bottom: 15px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-weight: 600;
+  color: #4a5568;
 }
 
 .chart-container {
+  /* Altura fixa mais adequada */
   height: 350px;
   width: 100%;
-  max-width: 100%;
   margin: 0 auto;
-  padding: 0;
-  overflow: visible !important; /* Importante para evitar truncamento */
+  position: relative;
 }
 
-.recharts-wrapper {
+/* Remover posicionamento absoluto da legenda */
+.recharts-legend-wrapper {
+  position: static !important;
   width: 100% !important;
-  height: 100% !important;
-  overflow: visible !important;
+  height: auto !important;
+  margin-top: 10px !important;
+  padding: 0 !important;
 }
 
-.recharts-sector {
-  stroke: none;
+/* Layout mais eficiente para a legenda */
+.legend-container {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  padding: 0 10px;
 }
 
-.recharts-legend-item-text {
-  font-size: 0.85rem; /* Reduzir tamanho do texto da legenda */
+.custom-legend-item {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.recharts-pie-label-text {
-  font-size: 0.75rem; /* Reduzir tamanho dos rótulos do gráfico */
-  font-weight: 500;
-  fill: #333;
+.category-name {
+  font-weight: 600;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Estilo quando não há dados */
 .no-data {
   text-align: center;
   color: #888;
@@ -115,12 +137,7 @@
   border-radius: 8px;
 }
 
-.tips-section h3 {
-  margin-top: 0;
-  color: #555;
-  font-size: 1.1rem;
-}
-
+/* Dicas */
 .tip {
   padding: 15px;
   border-radius: 8px;
@@ -147,127 +164,208 @@
   border-left: 4px solid #10b981;
 }
 
-/* Melhorar a visualização do gráfico */
-.recharts-default-legend {
-  overflow: visible !important;
-  display: flex !important;
-  flex-wrap: wrap !important;
-  justify-content: center !important;
-  gap: 15px;
-}
-
-.recharts-surface {
-  overflow: visible;
-}
-
-.recharts-legend-wrapper {
-  width: 100% !important;
-  display: flex;
-  justify-content: center;
-  height: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.recharts-legend-item {
-  margin: 0 !important;
-  padding: 5px 10px !important;
-  background-color: #f8f9fa;
-  border-radius: 20px;
-  transition: transform 0.2s;
-}
-
-.recharts-legend-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
+/* Estilos da legenda personalizada */
 .custom-legend-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  font-size: 0.9rem;
-  padding: 0 5px;
+  gap: 6px;
+  font-size: 0.85rem;
+  padding: 4px 0;
+  flex-wrap: nowrap;
 }
 
 .category-name {
-  font-weight: 500;
-  margin-bottom: 2px;
+  font-weight: 600;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .category-percent {
-  font-weight: bold;
+  color: #3b82f6;
 }
 
 .category-amount {
+  color: #64748b;
   font-size: 0.8rem;
-  color: #666;
-  margin-top: 2px;
 }
 
-.recharts-legend-item {
-  margin-bottom: 8px !important;
+.recharts-legend-wrapper {
+  position: absolute !important;
+  bottom: -120px !important; /* Reduzido de -180px */
+  left: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: 5px !important;
+}
+
+.recharts-default-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 15px !important;
+  width: 100% !important;
 }
 
 /* Responsividade */
 @media (max-width: 768px) {
+  .dashboard-summary {
+    padding: 15px;
+  }
+
   .summary-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .chart-container {
     height: 300px;
   }
 
-  .recharts-pie-label-text {
-    font-size: 0.7rem; /* Reduzir ainda mais o tamanho do texto em telas médias */
+  .legend-container {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-summary {
+    padding: 15px 12px;
   }
 
-  .recharts-legend-wrapper {
-    font-size: 0.75rem !important;
+  .dashboard-summary h2 {
+    font-size: 1.4rem;
   }
 
-  .recharts-legend-item {
-    font-size: 0.8rem;
-    padding: 4px 8px !important;
+  .dashboard-summary h3 {
+    font-size: 1.2rem;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
+
+  .legend-container {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 5px;
   }
 
   .custom-legend-item {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    margin-bottom: 5px; /* Reduzido de 8px */
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 5px; /* Reduzido de 8px */
+    width: 100%;
+    justify-content: space-between;
   }
 
   .category-amount {
     font-size: 0.7rem;
   }
-}
 
-@media (max-width: 480px) {
-  .chart-container {
-    height: 260px; /* Reduzir ainda mais em telas pequenas */
+  .recharts-legend-wrapper {
+    bottom: -150px !important; /* Reduzido de -220px */
   }
 
   .recharts-default-legend {
-    gap: 8px;
+    gap: 8px !important;
+  }
+
+  .category-detail {
+    display: flex;
+    gap: 6px;
+  }
+
+  .category-name {
+    max-width: none; /* Permitir que o nome seja completo */
+    min-width: 70px;
+  }
+
+  /* Garantir que é legível */
+  .category-percent {
+    font-weight: 500;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .chart-container {
+    height: 220px;
+  }
+
+  .legend-container {
+    grid-template-columns: 1fr;
+  }
+
+  /* Layout para telas muito pequenas */
+  .custom-legend-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    text-align: left;
+    padding: 3px 0; /* Reduzido de 6px */
+  }
+
+  .category-name {
+    font-size: 0.8rem;
+  }
+
+  .category-detail {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .recharts-legend-wrapper {
-    font-size: 0.7rem !important;
+    bottom: -180px !important; /* Reduzido de -270px */
   }
+}
 
-  .recharts-legend-item-text {
-    font-size: 0.65rem !important;
-  }
+/* Informação do ciclo de pagamento */
+.cycle-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -10px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #e2e8f0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
 
-  .recharts-legend-item {
-    padding: 3px 6px !important;
-  }
+.cycle-progress {
+  background-color: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  color: #475569;
+}
 
-  .category-name,
-  .category-percent {
-    font-size: 0.75rem;
-  }
+.projection-detail {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
 
-  .category-amount {
-    font-size: 0.65rem;
-  }
+.projection-detail .actual {
+  font-weight: 500;
+}
+
+.projection-detail .plus {
+  margin: 0 2px;
+  color: #94a3b8;
+}
+
+.projection-detail .projected {
+  color: #64748b;
+  font-style: italic;
 }
