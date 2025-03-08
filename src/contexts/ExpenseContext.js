@@ -64,7 +64,9 @@ export const ExpenseProvider = ({ children }) => {
                 date: data.date || new Date().toISOString().split("T")[0],
                 category: data.category || "Outros",
                 createdAt: data.createdAt
-                  ? data.createdAt.toDate().toISOString()
+                  ? typeof data.createdAt.toDate === "function"
+                    ? data.createdAt.toDate().toISOString()
+                    : new Date(data.createdAt).toISOString()
                   : new Date().toISOString(),
                 ...data,
               };
