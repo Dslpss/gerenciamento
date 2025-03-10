@@ -20,6 +20,8 @@ import "./styles/Header.css";
 import { ExpenseProvider, useExpenses } from "./contexts/ExpenseContext";
 import DashboardSummary from "./components/DashboardSummary";
 import ExpenseCalendar from "./components/ExpenseCalendar";
+import { FinancialGoalsProvider } from "./contexts/FinancialGoalsContext";
+import FinancialGoals from "./components/FinancialGoals";
 
 function AppContent() {
   const { currentUser } = useAuth();
@@ -310,6 +312,12 @@ function AppContent() {
             />
           </div>
         );
+      case "goals": // Novo case para metas financeiras
+        return (
+          <div className="page-content">
+            <FinancialGoals />
+          </div>
+        );
       case "settings":
         return (
           <div className="page-content">
@@ -420,7 +428,9 @@ function App() {
   return (
     <AuthProvider>
       <ExpenseProvider>
-        <AppContent />
+        <FinancialGoalsProvider>
+          <AppContent />
+        </FinancialGoalsProvider>
       </ExpenseProvider>
     </AuthProvider>
   );

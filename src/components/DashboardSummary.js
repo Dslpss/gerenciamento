@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useExpenses } from "../contexts/ExpenseContext";
 import "../styles/DashboardSummary.css";
+import PredictiveAnalysis from "./PredictiveAnalysis";
 
 const DashboardSummary = ({ salary, salaryDay = 5 }) => {
   const { expenses, extraIncomes } = useExpenses(); // Adicionar extraIncomes
@@ -150,8 +151,8 @@ const DashboardSummary = ({ salary, salaryDay = 5 }) => {
   const projectedTotal = totalSpent + projectionForRemainingDays;
 
   // Verifica se ultrapassará o orçamento do ciclo
-  const willOverspend = projectedTotal > salary;
-  const saldoFinal = salary - projectedTotal;
+  const willOverspend = projectedTotal > totalBudget; // Alterado de salary para totalBudget
+  const saldoFinal = totalBudget - projectedTotal; // Alterado de salary para totalBudget
 
   // Formatar data para exibição
   const formatDate = (date) => {
@@ -305,12 +306,15 @@ const DashboardSummary = ({ salary, salaryDay = 5 }) => {
         )}
       </div>
 
+      <PredictiveAnalysis />
+
       <div className="tips-section">
         <h3>Dicas Financeiras</h3>
         {willOverspend ? (
           <div className="tip warning-tip">
-            ⚠️ No ritmo atual, você gastará mais do que seu orçamento neste
-            ciclo. Considere reduzir despesas na categoria{" "}
+            ⚠️ No ritmo atual, você gastará mais do que seu orçamento total
+            neste ciclo (salário + ganhos extras). Considere reduzir despesas na
+            categoria{" "}
             {Object.entries(categoryData)
               .sort((a, b) => b[1] - a[1])
               .map(([category]) => category)[0] || "principal"}
@@ -318,13 +322,17 @@ const DashboardSummary = ({ salary, salaryDay = 5 }) => {
           </div>
         ) : percentageSpent > 75 ? (
           <div className="tip caution-tip">
-            ⚠️ Você já gastou mais de 75% do seu salário neste ciclo. Atente-se
-            aos gastos nos próximos {ciclo.diasRestantes} dias.
+            ⚠️ Você já gastou mais de 75% do seu orçamento total neste ciclo
+            (salário: {formatSensitiveAmount(salary)} + extras:{" "}
+            {formatSensitiveAmount(totalExtraIncome)}). Atente-se aos gastos nos
+            próximos {ciclo.diasRestantes} dias.
           </div>
         ) : (
           <div className="tip success-tip">
-            ✅ Você está controlando bem seus gastos neste ciclo! Continue assim
-            para os próximos {ciclo.diasRestantes} dias.
+            ✅ Você está controlando bem seus gastos neste ciclo! Seu orçamento
+            total é de {formatSensitiveAmount(totalBudget)}e você ainda tem{" "}
+            {formatSensitiveAmount(saldoFinal)} disponíveis para os próximos{" "}
+            {ciclo.diasRestantes} dias.
           </div>
         )}
       </div>
