@@ -79,3 +79,167 @@
   align-items: center;
   justify-content: center;
 }
+
+.extra-income-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.extra-income-form .input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.extra-income-form input {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+.extra-income-form input[type="number"] {
+  width: 150px;
+}
+
+.extra-income-form input[type="text"] {
+  flex: 1;
+}
+
+.extra-income-form button {
+  background-color: #2563eb;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.extra-income-form button:hover {
+  background-color: #1d4ed8;
+}
+
+.extra-income-history {
+  margin-top: 20px;
+}
+
+.extra-income-total {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #f0f9ff;
+  border-radius: 4px;
+  color: #0369a1;
+  font-weight: 500;
+}
+
+.extra-income-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.extra-income-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.extra-income-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.extra-income-info strong {
+  color: #059669;
+}
+
+.extra-income-info small {
+  color: #64748b;
+}
+
+.remove-extra-income {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.remove-extra-income:hover {
+  background-color: #fee2e2;
+}
+
+.extra-income-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-extra-income,
+.remove-extra-income {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 1.2rem;
+}
+
+.edit-extra-income {
+  color: #3b82f6;
+}
+
+.edit-extra-income:hover {
+  background-color: #dbeafe;
+}
+
+.remove-extra-income {
+  color: #ef4444;
+}
+
+.remove-extra-income:hover {
+  background-color: #fee2e2;
+}
+
+.cancel-button {
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
+.cancel-button:hover {
+  background-color: #dc2626 !important;
+}
+
+/* Estilo para item sendo editado */
+.extra-income-item.editing {
+  border: 2px solid #3b82f6;
+  background-color: #f0f9ff;
+}
+
+@media (max-width: 640px) {
+  .extra-income-form .input-group {
+    flex-direction: column;
+  }
+
+  .extra-income-form input[type="number"] {
+    width: 100%;
+  }
+
+  .extra-income-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+}

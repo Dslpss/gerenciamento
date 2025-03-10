@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useExpenses } from "../contexts/ExpenseContext";
 import "../styles/SalaryManager.css";
 
 const SalaryManager = ({
@@ -24,6 +25,11 @@ const SalaryManager = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSalaryDay, setNewSalaryDay] = useState(salaryDay.toString());
   const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
+  const [extraIncome, setExtraIncome] = useState("");
+  const [extraIncomeDescription, setExtraIncomeDescription] = useState("");
+  const [editingExtraIncome, setEditingExtraIncome] = useState(null);
+  const { extraIncomes, addExtraIncome, removeExtraIncome, updateExtraIncome } =
+    useExpenses();
 
   // Meses para seleção
   const months = [
@@ -226,6 +232,59 @@ const SalaryManager = ({
   const formatSensitiveAmount = (amount) => {
     return showSensitiveInfo ? formatAmount(amount) : "R$ ••••••";
   };
+
+  // Função para adicionar ganho extra
+  const handleAddExtraIncome = () => {
+    const amount = parseFloat(extraIncome);
+    if (!amount || amount <= 0 || !extraIncomeDescription) return;
+
+    const newEntry = {
+      amount,
+      description: extraIncomeDescription,
+      date: new Date().toISOString(),
+    };
+
+    addExtraIncome(newEntry);
+    setExtraIncome("");
+    setExtraIncomeDescription("");
+    showTemporaryFeedback("Ganho extra registrado com sucesso!");
+  };
+
+  // Função para remover ganho extra
+  const handleRemoveExtraIncome = (id) => {
+    removeExtraIncome(id);
+    showTemporaryFeedback("Ganho extra removido!", "warning");
+  };
+
+  // Função para iniciar edição de ganho extra
+  const handleEditExtraIncome = (entry) => {
+    setEditingExtraIncome(entry);
+    setExtraIncome(entry.amount.toString());
+    setExtraIncomeDescription(entry.description);
+  };
+
+  // Função para atualizar ganho extra
+  const handleUpdateExtraIncome = () => {
+    const amount = parseFloat(extraIncome);
+    if (!amount || amount <= 0 || !extraIncomeDescription) return;
+
+    updateExtraIncome(editingExtraIncome.id, {
+      amount,
+      description: extraIncomeDescription,
+      updatedAt: new Date().toISOString(),
+    });
+
+    setExtraIncome("");
+    setExtraIncomeDescription("");
+    setEditingExtraIncome(null);
+    showTemporaryFeedback("Ganho extra atualizado com sucesso!");
+  };
+
+  // Calcular total de ganhos extras
+  const totalExtraIncome = extraIncomes.reduce(
+    (sum, entry) => sum + entry.amount,
+    0
+  );
 
   // Interface de formulário
   if (editMode) {
@@ -477,6 +536,79 @@ const SalaryManager = ({
               </button>
             )}
           </div>
+        </div>
+
+        <div className="extra-income-section">
+          <h3>Ganhos Extras</h3>
+          <div className="extra-income-form">
+            <div className="input-group">
+              <input
+                type="number"
+                value={extraIncome}
+                onChange={(e) => setExtraIncome(e.target.value)}
+                placeholder="Valor (R$)"
+              />
+              <input
+                type="text"
+                value={extraIncomeDescription}
+                onChange={(e) => setExtraIncomeDescription(e.target.value)}
+                placeholder="Descrição (ex: Freelance)"
+              />
+              {editingExtraIncome ? (
+                <>
+                  <button onClick={handleUpdateExtraIncome}>Atualizar</button>
+                  <button
+                    className="cancel-button"
+                    onClick={() => {
+                      setEditingExtraIncome(null);
+                      setExtraIncome("");
+                      setExtraIncomeDescription("");
+                    }}>
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <button onClick={handleAddExtraIncome}>Adicionar</button>
+              )}
+            </div>
+          </div>
+
+          {extraIncomes.length > 0 && (
+            <div className="extra-income-history">
+              <h4>Histórico de Ganhos Extras</h4>
+              <div className="extra-income-total">
+                Total de ganhos extras:{" "}
+                {formatSensitiveAmount(totalExtraIncome)}
+              </div>
+              <div className="extra-income-list">
+                {extraIncomes.map((entry) => (
+                  <div key={entry.id} className="extra-income-item">
+                    <div className="extra-income-info">
+                      <strong>{formatSensitiveAmount(entry.amount)}</strong>
+                      <span>{entry.description}</span>
+                      <small>
+                        {new Date(entry.date).toLocaleDateString("pt-BR")}
+                      </small>
+                    </div>
+                    <div className="extra-income-actions">
+                      <button
+                        className="edit-extra-income"
+                        onClick={() => handleEditExtraIncome(entry)}
+                        title="Editar">
+                        ✎
+                      </button>
+                      <button
+                        className="remove-extra-income"
+                        onClick={() => handleRemoveExtraIncome(entry.id)}
+                        title="Remover">
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

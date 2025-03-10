@@ -9,6 +9,8 @@ import {
   doc,
   onSnapshot,
   serverTimestamp,
+  query,
+  orderBy,
 } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
 
@@ -18,6 +20,7 @@ export const ExpenseProvider = ({ children }) => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
+  const [extraIncomes, setExtraIncomes] = useState([]); // Novo estado
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -95,6 +98,29 @@ export const ExpenseProvider = ({ children }) => {
     }
 
     return () => unsubscribe();
+  }, [currentUser]);
+
+  // Carregar ganhos extras
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const loadExtraIncomes = async () => {
+      const userRef = doc(db, "users", currentUser.uid);
+      const extraIncomesRef = collection(userRef, "extraIncomes");
+      const q = query(extraIncomesRef, orderBy("date", "desc"));
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const extraIncomesList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setExtraIncomes(extraIncomesList);
+      });
+
+      return () => unsubscribe();
+    };
+
+    loadExtraIncomes();
   }, [currentUser]);
 
   const addExpense = async (expenseData) => {
@@ -204,6 +230,76 @@ export const ExpenseProvider = ({ children }) => {
     }
   };
 
+  // Adicionar função para gerenciar ganhos extras
+  const addExtraIncome = async (extraIncomeData) => {
+    try {
+      if (!currentUser) throw new Error("Usuário não autenticado");
+
+      const userRef = doc(db, "users", currentUser.uid);
+      const extraIncomeRef = collection(userRef, "extraIncomes");
+
+      const newExtraIncome = {
+        ...extraIncomeData,
+        createdAt: serverTimestamp(),
+        userId: currentUser.uid,
+        date: extraIncomeData.date,
+        amount: Number(extraIncomeData.amount),
+        description: extraIncomeData.description || "",
+      };
+
+      const docRef = await addDoc(extraIncomeRef, newExtraIncome);
+
+      // Atualizar estado local imediatamente
+      setExtraIncomes((prev) => [
+        ...prev,
+        { ...newExtraIncome, id: docRef.id },
+      ]);
+
+      return docRef;
+    } catch (error) {
+      console.error("Erro ao adicionar ganho extra:", error);
+      throw error;
+    }
+  };
+
+  // Atualizar função para editar ganho extra
+  const updateExtraIncome = async (id, updatedData) => {
+    try {
+      if (!currentUser) throw new Error("Usuário não autenticado");
+
+      const userRef = doc(db, "users", currentUser.uid);
+      const extraIncomeRef = doc(collection(userRef, "extraIncomes"), id);
+
+      const dataWithTimestamp = {
+        ...updatedData,
+        updatedAt: serverTimestamp(),
+      };
+
+      await updateDoc(extraIncomeRef, dataWithTimestamp);
+
+      setExtraIncomes((prev) =>
+        prev.map((income) =>
+          income.id === id ? { ...income, ...updatedData } : income
+        )
+      );
+    } catch (error) {
+      console.error("Erro ao atualizar ganho extra:", error);
+      throw error;
+    }
+  };
+
+  const removeExtraIncome = async (id) => {
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      const extraIncomeRef = doc(collection(userRef, "extraIncomes"), id);
+
+      await deleteDoc(extraIncomeRef);
+      setExtraIncomes((prev) => prev.filter((income) => income.id !== id));
+    } catch (error) {
+      console.error("Erro ao remover ganho extra:", error);
+    }
+  };
+
   // Função para limpar todas as despesas (para uso com a função de reset de dados)
   const clearExpenses = () => {
     setExpenses([]);
@@ -212,19 +308,22 @@ export const ExpenseProvider = ({ children }) => {
     return true;
   };
 
+  const value = {
+    expenses,
+    loading,
+    lastUpdate,
+    addExpense,
+    updateExpense,
+    deleteExpense,
+    clearExpenses, // Adicionando a nova função ao contexto
+    extraIncomes, // Novo
+    addExtraIncome, // Novo
+    removeExtraIncome, // Novo
+    updateExtraIncome, // Novo
+  };
+
   return (
-    <ExpenseContext.Provider
-      value={{
-        expenses,
-        loading,
-        lastUpdate,
-        addExpense,
-        updateExpense,
-        deleteExpense,
-        clearExpenses, // Adicionando a nova função ao contexto
-      }}>
-      {children}
-    </ExpenseContext.Provider>
+    <ExpenseContext.Provider value={value}>{children}</ExpenseContext.Provider>
   );
 };
 

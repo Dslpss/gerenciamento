@@ -102,6 +102,19 @@
   color: #dc2626;
 }
 
+.summary-card.extra-income {
+  background-color: #f0fdf4;
+  border-left: 4px solid #22c55e;
+}
+
+.summary-card.extra-income .amount {
+  color: #16a34a;
+}
+
+.summary-card.extra-income .info {
+  color: #059669;
+}
+
 /* Seção do gráfico completamente reformulada */
 .chart-section {
   margin-bottom: 20px;

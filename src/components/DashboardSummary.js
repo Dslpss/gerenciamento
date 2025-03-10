@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useExpenses } from "../contexts/ExpenseContext";
 import "../styles/DashboardSummary.css";
 
 const DashboardSummary = ({ salary, salaryDay = 5 }) => {
-  const { expenses } = useExpenses();
+  const { expenses, extraIncomes } = useExpenses(); // Adicionar extraIncomes
   const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
 
   // Dados para o mês atual
@@ -53,8 +53,30 @@ const DashboardSummary = ({ salary, salaryDay = 5 }) => {
     0
   );
 
-  // Calcular percentual do salário gasto
-  const percentageSpent = salary > 0 ? (totalSpent / salary) * 100 : 0;
+  // Filtrar ganhos extras do ciclo atual
+  const currentCycleExtraIncomes = useMemo(() => {
+    return extraIncomes.filter((income) => {
+      const incomeDate = new Date(income.date);
+      return incomeDate >= ciclo.inicio && incomeDate <= ciclo.fim;
+    });
+  }, [extraIncomes, ciclo]);
+
+  // Calcular total de ganhos extras para o ciclo
+  const totalExtraIncome = useMemo(() => {
+    return currentCycleExtraIncomes.reduce(
+      (sum, income) => sum + income.amount,
+      0
+    );
+  }, [currentCycleExtraIncomes]);
+
+  // Atualizar o cálculo do orçamento total incluindo ganhos extras
+  const totalBudget = useMemo(() => {
+    return salary + totalExtraIncome;
+  }, [salary, totalExtraIncome]);
+
+  // Atualizar o percentual considerando o orçamento total
+  const percentageSpent =
+    totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
   // Agrupar por categoria para o gráfico
   const categoryData = {};
@@ -169,10 +191,30 @@ const DashboardSummary = ({ salary, salaryDay = 5 }) => {
 
       <div className="summary-cards">
         <div className="summary-card">
+          <h3>Orçamento Total</h3>
+          <div className="amount">{formatSensitiveAmount(totalBudget)}</div>
+          <div className="info">
+            Salário: {formatSensitiveAmount(salary)}
+            {totalExtraIncome > 0 && (
+              <> + Extras: {formatSensitiveAmount(totalExtraIncome)}</>
+            )}
+          </div>
+        </div>
+        <div className="summary-card">
           <h3>Gasto até agora</h3>
           <div className="amount">{formatSensitiveAmount(totalSpent)}</div>
           <div className="percentage">
-            {percentageSpent.toFixed(1)}% do salário
+            {percentageSpent.toFixed(1)}% do orçamento total
+          </div>
+        </div>
+
+        <div className="summary-card extra-income">
+          <h3>Ganhos Extras</h3>
+          <div className="amount positive">
+            {formatSensitiveAmount(totalExtraIncome)}
+          </div>
+          <div className="info">
+            {currentCycleExtraIncomes.length} registros neste ciclo
           </div>
         </div>
 
