@@ -1,7 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import "../styles/ExpenseSummary.css";
 
 const ExpenseSummary = ({ expenses, salary, isMonthlyView, filters }) => {
+  // Alterar o estado inicial para false para começar oculto
+  const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
+
   // Verificar se estamos visualizando um mês específico
   const isSpecificMonth = filters && filters.month !== "todos";
 
@@ -11,6 +14,11 @@ const ExpenseSummary = ({ expenses, salary, isMonthlyView, filters }) => {
       style: "currency",
       currency: "BRL",
     }).format(amount || 0);
+  };
+
+  // Função para formatar valor sensível
+  const formatSensitiveAmount = (amount) => {
+    return showSensitiveInfo ? formatAmount(amount) : "R$ ••••••";
   };
 
   // Calcular o total gasto
@@ -125,18 +133,28 @@ const ExpenseSummary = ({ expenses, salary, isMonthlyView, filters }) => {
 
   return (
     <div className="expense-summary">
-      <h2>{summaryTitle}</h2>
+      <h2>
+        {summaryTitle}
+        <button
+          className="toggle-sensitive-info"
+          onClick={() => setShowSensitiveInfo(!showSensitiveInfo)}
+          aria-label={
+            showSensitiveInfo ? "Ocultar valores" : "Mostrar valores"
+          }>
+          <i className={`fas fa-eye${showSensitiveInfo ? "" : "-slash"}`}></i>
+        </button>
+      </h2>
 
       <div className="summary-grid">
         <div className="summary-item">
           <div className="summary-label">Orçamento</div>
-          <div className="summary-value">{formatAmount(salary)}</div>
+          <div className="summary-value">{formatSensitiveAmount(salary)}</div>
         </div>
 
         <div className="summary-item">
           <div className="summary-label">Total Gasto</div>
           <div className="summary-value expense">
-            {formatAmount(totalSpent)}
+            {formatSensitiveAmount(totalSpent)}
           </div>
         </div>
 
@@ -146,13 +164,15 @@ const ExpenseSummary = ({ expenses, salary, isMonthlyView, filters }) => {
             className={`summary-value ${
               remainingBalance < 0 ? "negative" : "positive"
             }`}>
-            {formatAmount(remainingBalance)}
+            {formatSensitiveAmount(remainingBalance)}
           </div>
         </div>
 
         <div className="summary-item">
           <div className="summary-label">Média Diária</div>
-          <div className="summary-value">{formatAmount(dailyAverage)}</div>
+          <div className="summary-value">
+            {formatSensitiveAmount(dailyAverage)}
+          </div>
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import "../styles/AnnualReport.css"; // Adicione esta linha para importar os est
 
 const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
 
   // Anos disponíveis com base nos dados existentes
   const availableYears = useMemo(() => {
@@ -140,12 +141,27 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
     return `${percent.toFixed(1)}%`;
   };
 
+  // Função para formatar valor sensível
+  const formatSensitiveAmount = (amount) => {
+    return showSensitiveInfo ? formatAmount(amount) : "R$ ••••••";
+  };
+
   // Na parte do gráfico de barras, vamos adicionar detecção para dispositivos móveis:
   const isMobileDevice = window.innerWidth <= 480;
 
   return (
     <div className="annual-report">
-      <h2>Relatório Anual de Gastos</h2>
+      <h2>
+        Relatório Anual de Gastos
+        <button
+          className="toggle-sensitive-info"
+          onClick={() => setShowSensitiveInfo(!showSensitiveInfo)}
+          aria-label={
+            showSensitiveInfo ? "Ocultar valores" : "Mostrar valores"
+          }>
+          <i className={`fas fa-eye${showSensitiveInfo ? "" : "-slash"}`}></i>
+        </button>
+      </h2>
 
       <div className="filter-container">
         <label htmlFor="year-select">Selecione o ano: </label>
@@ -167,13 +183,13 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
           <div className="summary-card">
             <div className="summary-title">Total Ganho</div>
             <div className="summary-value">
-              {formatAmount(annualData.annualSalary)}
+              {formatSensitiveAmount(annualData.annualSalary)}
             </div>
           </div>
           <div className="summary-card">
             <div className="summary-title">Total Gasto</div>
             <div className="summary-value">
-              {formatAmount(annualData.annualExpense)}
+              {formatSensitiveAmount(annualData.annualExpense)}
             </div>
           </div>
           <div className="summary-card">
@@ -187,7 +203,7 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
               className={`summary-value ${
                 annualData.annualBalance < 0 ? "negative" : "positive"
               }`}>
-              {formatAmount(annualData.annualBalance)}
+              {formatSensitiveAmount(annualData.annualBalance)}
             </div>
           </div>
           <div className="summary-card">
@@ -235,16 +251,20 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
                     <div
                       className="chart-bar salary-bar"
                       style={{ width: `${salaryWidth}%` }}
-                      title={`Salário: ${formatAmount(data.monthlySalary)}`}>
-                      {formatAmount(data.monthlySalary)}
+                      title={`Salário: ${formatSensitiveAmount(
+                        data.monthlySalary
+                      )}`}>
+                      {formatSensitiveAmount(data.monthlySalary)}
                     </div>
                     <div
                       className={`chart-bar expense-bar ${
                         data.totalExpense > data.monthlySalary ? "exceeded" : ""
                       }`}
                       style={{ width: `${expenseWidth}%` }}
-                      title={`Gastos: ${formatAmount(data.totalExpense)}`}>
-                      {formatAmount(data.totalExpense)}
+                      title={`Gastos: ${formatSensitiveAmount(
+                        data.totalExpense
+                      )}`}>
+                      {formatSensitiveAmount(data.totalExpense)}
                     </div>
                   </div>
                 </div>
@@ -269,16 +289,16 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
                       <div
                         className="category-bar"
                         style={{ width: `${Math.min(percentage, 100)}%` }}
-                        title={formatAmount(amount)}>
+                        title={formatSensitiveAmount(amount)}>
                         {percentage > (isMobileDevice ? 15 : 10)
                           ? isMobileDevice
-                            ? formatAmount(amount).replace("R$", "")
-                            : formatAmount(amount)
+                            ? formatSensitiveAmount(amount).replace("R$", "")
+                            : formatSensitiveAmount(amount)
                           : ""}
                       </div>
                       {percentage <= 10 && (
                         <div className="outside-bar-value">
-                          {formatAmount(amount)}
+                          {formatSensitiveAmount(amount)}
                         </div>
                       )}
                     </div>
@@ -307,9 +327,9 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
                 key={data.month}
                 className={data.balance < 0 ? "negative-row" : ""}>
                 <td>{data.monthName}</td>
-                <td>{formatAmount(data.monthlySalary)}</td>
-                <td>{formatAmount(data.totalExpense)}</td>
-                <td>{formatAmount(data.balance)}</td>
+                <td>{formatSensitiveAmount(data.monthlySalary)}</td>
+                <td>{formatSensitiveAmount(data.totalExpense)}</td>
+                <td>{formatSensitiveAmount(data.balance)}</td>
                 <td>{formatPercent(data.percentOfSalary)}</td>
               </tr>
             ))}
@@ -317,9 +337,9 @@ const AnnualReport = ({ expenses, monthlySalaries, defaultSalary }) => {
           <tfoot>
             <tr className="total-row">
               <td>Total Anual</td>
-              <td>{formatAmount(annualData.annualSalary)}</td>
-              <td>{formatAmount(annualData.annualExpense)}</td>
-              <td>{formatAmount(annualData.annualBalance)}</td>
+              <td>{formatSensitiveAmount(annualData.annualSalary)}</td>
+              <td>{formatSensitiveAmount(annualData.annualExpense)}</td>
+              <td>{formatSensitiveAmount(annualData.annualBalance)}</td>
               <td>{formatPercent(annualData.annualPercentOfSalary)}</td>
             </tr>
           </tfoot>

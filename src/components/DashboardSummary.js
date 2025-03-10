@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useExpenses } from "../contexts/ExpenseContext";
 import "../styles/DashboardSummary.css";
 
 const DashboardSummary = ({ salary, salaryDay = 5 }) => {
   const { expenses } = useExpenses();
+  const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
 
   // Dados para o mês atual
   const currentDate = new Date();
@@ -135,12 +136,28 @@ const DashboardSummary = ({ salary, salaryDay = 5 }) => {
     return date.toLocaleDateString("pt-BR");
   };
 
+  // Função para formatar valor sensível
+  const formatSensitiveAmount = (amount) => {
+    return showSensitiveInfo ? formatCurrency(amount) : "R$ ••••••";
+  };
+
   // Detectar se é mobile
   const isMobile = window.innerWidth <= 480;
 
   return (
     <div className="dashboard-summary">
-      <h2>Resumo do Ciclo Atual</h2>
+      <h2>
+        Resumo do Ciclo Atual
+        <button
+          className="toggle-sensitive-info"
+          onClick={() => setShowSensitiveInfo(!showSensitiveInfo)}
+          aria-label={
+            showSensitiveInfo ? "Ocultar valores" : "Mostrar valores"
+          }>
+          <i className={`fas fa-eye${showSensitiveInfo ? "" : "-slash"}`}></i>
+        </button>
+      </h2>
+
       <div className="cycle-info">
         <span>
           Ciclo: {formatDate(ciclo.inicio)} até {formatDate(ciclo.fim)}
@@ -153,7 +170,7 @@ const DashboardSummary = ({ salary, salaryDay = 5 }) => {
       <div className="summary-cards">
         <div className="summary-card">
           <h3>Gasto até agora</h3>
-          <div className="amount">{formatCurrency(totalSpent)}</div>
+          <div className="amount">{formatSensitiveAmount(totalSpent)}</div>
           <div className="percentage">
             {percentageSpent.toFixed(1)}% do salário
           </div>
@@ -161,7 +178,7 @@ const DashboardSummary = ({ salary, salaryDay = 5 }) => {
 
         <div className="summary-card">
           <h3>Média diária</h3>
-          <div className="amount">{formatCurrency(dailyAverage)}</div>
+          <div className="amount">{formatSensitiveAmount(dailyAverage)}</div>
           <div className="info">
             Com base nos últimos {ciclo.diasPassados} dias
           </div>
@@ -169,17 +186,21 @@ const DashboardSummary = ({ salary, salaryDay = 5 }) => {
 
         <div className={`summary-card ${willOverspend ? "warning" : ""}`}>
           <h3>Projeção do ciclo</h3>
-          <div className="amount">{formatCurrency(projectedTotal)}</div>
+          <div className="amount">{formatSensitiveAmount(projectedTotal)}</div>
           <div className="info">
             {willOverspend
-              ? `Você excederá o orçamento em ${formatCurrency(-saldoFinal)}`
-              : `Você economizará ${formatCurrency(saldoFinal)}`}
+              ? `Você excederá o orçamento em ${formatSensitiveAmount(
+                  -saldoFinal
+                )}`
+              : `Você economizará ${formatSensitiveAmount(saldoFinal)}`}
           </div>
           <div className="projection-detail">
-            <span className="actual">Atual: {formatCurrency(totalSpent)}</span>
+            <span className="actual">
+              Atual: {formatSensitiveAmount(totalSpent)}
+            </span>
             <span className="plus">+</span>
             <span className="projected">
-              Projeção: {formatCurrency(projectionForRemainingDays)}
+              Projeção: {formatSensitiveAmount(projectionForRemainingDays)}
             </span>
           </div>
         </div>

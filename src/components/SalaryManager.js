@@ -23,6 +23,7 @@ const SalaryManager = ({
   const [feedbackType, setFeedbackType] = useState("success"); // ou "warning"
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSalaryDay, setNewSalaryDay] = useState(salaryDay.toString());
+  const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
 
   // Meses para seleção
   const months = [
@@ -221,6 +222,11 @@ const SalaryManager = ({
     }
   };
 
+  // Função para formatar valor sensível
+  const formatSensitiveAmount = (amount) => {
+    return showSensitiveInfo ? formatAmount(amount) : "R$ ••••••";
+  };
+
   // Interface de formulário
   if (editMode) {
     return (
@@ -313,7 +319,17 @@ const SalaryManager = ({
   if (historyMode && salaryHistory && salaryHistory.length > 0) {
     return (
       <div className="salary-manager">
-        <h2>Histórico de Alterações Salariais</h2>
+        <h2>
+          Histórico de Alterações Salariais
+          <button
+            className="toggle-sensitive-info"
+            onClick={() => setShowSensitiveInfo(!showSensitiveInfo)}
+            aria-label={
+              showSensitiveInfo ? "Ocultar valores" : "Mostrar valores"
+            }>
+            <i className={`fas fa-eye${showSensitiveInfo ? "" : "-slash"}`}></i>
+          </button>
+        </h2>
         <div className="salary-history">
           <table className="history-table">
             <thead>
@@ -342,8 +358,8 @@ const SalaryManager = ({
                       }>
                       {entry.type}
                     </td>
-                    <td>{formatAmount(entry.previousValue)}</td>
-                    <td>{formatAmount(entry.newValue)}</td>
+                    <td>{formatSensitiveAmount(entry.previousValue)}</td>
+                    <td>{formatSensitiveAmount(entry.newValue)}</td>
                     <td
                       className={
                         entry.percentChange > 0
@@ -379,7 +395,17 @@ const SalaryManager = ({
 
     return (
       <div className="salary-manager">
-        <h2>Seus Salários</h2>
+        <h2>
+          Seus Salários
+          <button
+            className="toggle-sensitive-info"
+            onClick={() => setShowSensitiveInfo(!showSensitiveInfo)}
+            aria-label={
+              showSensitiveInfo ? "Ocultar valores" : "Mostrar valores"
+            }>
+            <i className={`fas fa-eye${showSensitiveInfo ? "" : "-slash"}`}></i>
+          </button>
+        </h2>
         {showFeedback && (
           <div className={`alert ${feedbackType}`}>{feedbackMessage}</div>
         )}
@@ -387,25 +413,29 @@ const SalaryManager = ({
           <div className="salary-item">
             <strong>Salário do mês atual: </strong>
             <span className="salary-value">
-              {currentMonthSalary
-                ? formatAmount(currentMonthSalary)
-                : formatAmount(salary)}
+              {formatSensitiveAmount(currentMonthSalary || salary)}
             </span>
           </div>
 
           <div className="salary-item">
             <strong>Salário anual acumulado ({currentYear}): </strong>
-            <span className="salary-value">{formatAmount(annualSalary)}</span>
+            <span className="salary-value">
+              {formatSensitiveAmount(annualSalary)}
+            </span>
           </div>
 
           <div className="salary-item">
             <strong>Projeção para {currentYear + 1}: </strong>
-            <span className="salary-value">{formatAmount(nextYearSalary)}</span>
+            <span className="salary-value">
+              {formatSensitiveAmount(nextYearSalary)}
+            </span>
           </div>
 
           <div className="salary-item">
             <strong>Salário base definido: </strong>
-            <span className="salary-value">{formatAmount(salary)}</span>
+            <span className="salary-value">
+              {formatSensitiveAmount(salary)}
+            </span>
           </div>
 
           <div className="salary-section">

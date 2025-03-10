@@ -35,3 +35,47 @@
 .salary-manager button.edit:hover {
   background-color: #1d4ed8;
 }
+
+.salary-manager h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0;
+  color: #2d3748;
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.toggle-sensitive-info {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 10px;
+}
+
+.toggle-sensitive-info:hover {
+  background-color: #f1f5f9;
+  color: #3b82f6;
+  transform: scale(1.1);
+}
+
+.toggle-sensitive-info i {
+  font-size: 1.2rem;
+  line-height: 1;
+  width: 1.2rem;
+  height: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
