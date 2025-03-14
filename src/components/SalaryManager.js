@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useExpenses } from "../contexts/ExpenseContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useFinancialGoals } from "../contexts/FinancialGoalsContext"; // Adicionar este import
+import {
+  collection,
+  doc,
+  query,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "../firebase/config";
 import "../styles/SalaryManager.css";
+import SalaryAdvanceManager from "./SalaryAdvanceManager";
 
 const SalaryManager = ({
   salary,
@@ -30,6 +41,10 @@ const SalaryManager = ({
   const [editingExtraIncome, setEditingExtraIncome] = useState(null);
   const { extraIncomes, addExtraIncome, removeExtraIncome, updateExtraIncome } =
     useExpenses();
+  const { currentUser } = useAuth(); // Adicionar hook useAuth
+  const [salaryDeductions, setSalaryDeductions] = useState([]);
+  const { removeSalaryDeduction } = useFinancialGoals();
+  const [confirmDeleteDeduction, setConfirmDeleteDeduction] = useState(null);
 
   // Meses para seleção
   const months = [
@@ -76,6 +91,31 @@ const SalaryManager = ({
   useEffect(() => {
     setSalaryInput(salary || "");
   }, [salary]);
+
+  // Adicionar useEffect para carregar deduções
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const userRef = doc(db, "users", currentUser.uid);
+    const deductionsRef = collection(userRef, "salaryDeductions");
+    const q = query(deductionsRef, orderBy("date", "desc"));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const deductions = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setSalaryDeductions(deductions);
+      },
+      (error) => {
+        console.error("Erro ao carregar deduções:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser?.uid]); // Adicionado currentUser.uid como dependência
 
   // Função para mostrar feedback temporário
   const showTemporaryFeedback = (message, type = "success") => {
@@ -189,6 +229,24 @@ const SalaryManager = ({
     return getMonthlySalary(currentMonth, currentYear);
   }, [getMonthlySalary]);
 
+  // Função para calcular salário líquido (com deduções)
+  const calculateNetSalary = (grossSalary, month, year) => {
+    const monthDeductions = salaryDeductions.filter((deduction) => {
+      const deductionDate = deduction.date?.toDate() || new Date();
+      return (
+        deductionDate.getMonth() === month - 1 &&
+        deductionDate.getFullYear() === year
+      );
+    });
+
+    const totalDeductions = monthDeductions.reduce(
+      (sum, deduction) => sum + deduction.amount,
+      0
+    );
+
+    return grossSalary - totalDeductions;
+  };
+
   // Formatar valor para exibição
   const formatAmount = (amount) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -285,6 +343,23 @@ const SalaryManager = ({
     (sum, entry) => sum + entry.amount,
     0
   );
+
+  // Adicionar função para remover dedução
+  const handleRemoveDeduction = async (id) => {
+    if (confirmDeleteDeduction !== id) {
+      setConfirmDeleteDeduction(id);
+      return;
+    }
+
+    try {
+      await removeSalaryDeduction(id);
+      setConfirmDeleteDeduction(null);
+      showTemporaryFeedback("Dedução removida com sucesso");
+    } catch (error) {
+      console.error("Erro ao remover dedução:", error);
+      showTemporaryFeedback("Erro ao remover dedução", "error");
+    }
+  };
 
   // Interface de formulário
   if (editMode) {
@@ -497,6 +572,55 @@ const SalaryManager = ({
             </span>
           </div>
 
+          <div className="salary-item">
+            <strong>Salário bruto do mês atual: </strong>
+            <span className="salary-value">
+              {formatSensitiveAmount(currentMonthSalary)}
+            </span>
+          </div>
+          <div className="salary-item">
+            <strong>Vales e deduções: </strong>
+            <div className="deductions-list">
+              {salaryDeductions
+                .filter((d) => {
+                  const deductionDate = d.date?.toDate() || new Date();
+                  return (
+                    deductionDate.getMonth() === new Date().getMonth() &&
+                    deductionDate.getFullYear() === new Date().getFullYear()
+                  );
+                })
+                .map((deduction) => (
+                  <div key={deduction.id} className="deduction-item">
+                    <span>{formatSensitiveAmount(deduction.amount)}</span>
+                    <button
+                      onClick={() => handleRemoveDeduction(deduction.id)}
+                      className={`remove-deduction ${
+                        confirmDeleteDeduction === deduction.id ? "confirm" : ""
+                      }`}
+                      title={
+                        confirmDeleteDeduction === deduction.id
+                          ? "Confirmar remoção"
+                          : "Remover"
+                      }>
+                      {confirmDeleteDeduction === deduction.id ? "✓" : "×"}
+                    </button>
+                  </div>
+                ))}
+            </div>
+          </div>
+          <div className="salary-item">
+            <strong>Salário líquido do mês atual: </strong>
+            <span className="salary-value">
+              {formatSensitiveAmount(
+                calculateNetSalary(
+                  currentMonthSalary,
+                  new Date().getMonth() + 1,
+                  new Date().getFullYear()
+                )
+              )}
+            </span>
+          </div>
+
           <div className="salary-section">
             <h3>Dia de Recebimento do Salário</h3>
             <div className="input-group">
@@ -609,6 +733,10 @@ const SalaryManager = ({
               </div>
             </div>
           )}
+        </div>
+
+        <div className="salary-section">
+          <SalaryAdvanceManager salary={salary} />
         </div>
       </div>
     );

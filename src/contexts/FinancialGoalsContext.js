@@ -19,6 +19,7 @@ export const FinancialGoalsProvider = ({ children }) => {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const { currentUser } = useAuth();
+  const [salaryAdvances, setSalaryAdvances] = useState([]);
 
   // Carregar metas do Firebase
   useEffect(() => {
@@ -36,6 +37,32 @@ export const FinancialGoalsProvider = ({ children }) => {
       setGoals(goalsData);
       setLoading(false);
     });
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
+  // Carregar vales
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const userRef = doc(db, "users", currentUser.uid);
+    const advancesRef = collection(userRef, "salaryAdvances");
+    const q = query(advancesRef, orderBy("requestedAt", "desc"));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const advances = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setSalaryAdvances(advances);
+        console.log("Vales carregados:", advances);
+      },
+      (error) => {
+        console.error("Erro ao carregar vales:", error);
+      }
+    );
 
     return () => unsubscribe();
   }, [currentUser]);
@@ -119,6 +146,106 @@ export const FinancialGoalsProvider = ({ children }) => {
     return (currentAmount / goal.targetAmount) * 100;
   };
 
+  // Adicionar vale/adiantamento
+  const addSalaryAdvance = async (advanceData) => {
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      const advanceRef = collection(userRef, "salaryAdvances");
+
+      const newAdvance = {
+        ...advanceData,
+        createdAt: serverTimestamp(),
+        userId: currentUser.uid,
+        status: "pending",
+        expectedDate: advanceData.expectedDate || null,
+      };
+
+      const docRef = await addDoc(advanceRef, newAdvance);
+      return docRef.id;
+    } catch (error) {
+      console.error("Erro ao adicionar vale:", error);
+      throw error;
+    }
+  };
+
+  // Confirmar recebimento do vale
+  const confirmSalaryAdvance = async (advanceId) => {
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      const advanceRef = doc(collection(userRef, "salaryAdvances"), advanceId);
+
+      // Buscar o vale atual
+      const advance = salaryAdvances.find((adv) => adv.id === advanceId);
+      if (!advance) return;
+
+      // Registrar a data de recebimento
+      const receivedAt = serverTimestamp();
+
+      // Atualizar o status do vale
+      await updateDoc(advanceRef, {
+        status: "received",
+        receivedAt: receivedAt,
+      });
+
+      // Registrar a dedução do salário
+      const salaryDeductionsRef = collection(userRef, "salaryDeductions");
+      await addDoc(salaryDeductionsRef, {
+        amount: advance.amount,
+        type: "salaryAdvance",
+        description: "Vale salarial",
+        date: receivedAt,
+        advanceId: advanceId,
+        createdAt: receivedAt,
+      });
+    } catch (error) {
+      console.error("Erro ao confirmar vale:", error);
+      throw error;
+    }
+  };
+
+  // Adicionar função para atualizar vale
+  const updateSalaryAdvance = async (advanceId, updates) => {
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      const advanceRef = doc(collection(userRef, "salaryAdvances"), advanceId);
+
+      await updateDoc(advanceRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar vale:", error);
+      throw error;
+    }
+  };
+
+  // Adicionar função para excluir vale
+  const deleteSalaryAdvance = async (advanceId) => {
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      const advanceRef = doc(collection(userRef, "salaryAdvances"), advanceId);
+      await deleteDoc(advanceRef);
+    } catch (error) {
+      console.error("Erro ao excluir vale:", error);
+      throw error;
+    }
+  };
+
+  // Adicionar função para remover dedução salarial
+  const removeSalaryDeduction = async (deductionId) => {
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      const deductionRef = doc(
+        collection(userRef, "salaryDeductions"),
+        deductionId
+      );
+      await deleteDoc(deductionRef);
+    } catch (error) {
+      console.error("Erro ao remover dedução:", error);
+      throw error;
+    }
+  };
+
   const value = {
     goals,
     loading,
@@ -127,6 +254,12 @@ export const FinancialGoalsProvider = ({ children }) => {
     removeGoal,
     calculateGoalProgress,
     updateGoalProgress,
+    salaryAdvances,
+    addSalaryAdvance,
+    confirmSalaryAdvance,
+    updateSalaryAdvance,
+    deleteSalaryAdvance,
+    removeSalaryDeduction,
   };
 
   return (
