@@ -130,6 +130,31 @@ const SalaryAdvanceManager = ({ salary }) => {
     setEditingAdvance(null);
   };
 
+  // Atualizar a função que formata as datas para exibição
+  const formatDate = (dateString) => {
+    try {
+      // Se for string no formato YYYY-MM-DD
+      if (
+        typeof dateString === "string" &&
+        dateString.match(/^\d{4}-\d{2}-\d{2}$/)
+      ) {
+        const [year, month, day] = dateString.split("-").map(Number);
+        return new Date(year, month - 1, day).toLocaleDateString("pt-BR");
+      }
+
+      // Para objetos timestamp do Firestore
+      if (dateString && typeof dateString.toDate === "function") {
+        return dateString.toDate().toLocaleDateString("pt-BR");
+      }
+
+      // Para outros formatos de data
+      return new Date(dateString).toLocaleDateString("pt-BR");
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return "Data inválida";
+    }
+  };
+
   return (
     <div className="salary-advance-manager">
       <div className="advance-header">
@@ -228,8 +253,7 @@ const SalaryAdvanceManager = ({ salary }) => {
                           })}
                         </strong>
                         <span>
-                          Previsto para:{" "}
-                          {new Date(advance.expectedDate).toLocaleDateString()}
+                          Previsto para: {formatDate(advance.expectedDate)}
                         </span>
                         <span>Status: Pendente</span>
                       </div>
@@ -281,14 +305,10 @@ const SalaryAdvanceManager = ({ salary }) => {
                           })}
                         </strong>
                         <span>
-                          Recebido em:{" "}
-                          {new Date(
-                            advance.receivedAt?.toDate()
-                          ).toLocaleDateString()}
+                          Recebido em: {formatDate(advance.receivedAt)}
                         </span>
                         <span>
-                          Solicitado para:{" "}
-                          {new Date(advance.expectedDate).toLocaleDateString()}
+                          Solicitado para: {formatDate(advance.expectedDate)}
                         </span>
                       </div>
                       <div className="advance-actions">

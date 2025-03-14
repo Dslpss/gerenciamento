@@ -53,15 +53,30 @@ export const normalizeDate = (date) => {
 
 /**
  * Formata uma data no formato ISO (YYYY-MM-DD) para uso em inputs HTML
- *
- * @param {Date|string} date - Data para formatar
- * @returns {string} String de data formatada como YYYY-MM-DD
+ * Garante que a data mantém o dia correto, sem ajustes de fuso horário
  */
 export const formatDateForInput = (date) => {
-  const parsedDate = parseLocalDate(date);
-  return `${parsedDate.getFullYear()}-${String(
-    parsedDate.getMonth() + 1
-  ).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+  if (!date) return "";
+
+  // Se já for string no formato YYYY-MM-DD, retorna como está
+  if (typeof date === "string" && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return date;
+  }
+
+  // Para timestamp do Firestore
+  if (date && typeof date.toDate === "function") {
+    date = date.toDate();
+  }
+
+  // Converter para objeto Date se for string
+  const d = typeof date === "string" ? new Date(date) : date;
+
+  // Formatar garantindo que o dia não seja alterado pelo fuso horário
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 };
 
 /**

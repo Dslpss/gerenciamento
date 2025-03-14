@@ -232,7 +232,7 @@ const SalaryManager = ({
   // Função para calcular salário líquido (com deduções)
   const calculateNetSalary = (grossSalary, month, year) => {
     const monthDeductions = salaryDeductions.filter((deduction) => {
-      const deductionDate = deduction.date?.toDate() || new Date();
+      const deductionDate = getDateFromField(deduction.date);
       return (
         deductionDate.getMonth() === month - 1 &&
         deductionDate.getFullYear() === year
@@ -358,6 +358,29 @@ const SalaryManager = ({
     } catch (error) {
       console.error("Erro ao remover dedução:", error);
       showTemporaryFeedback("Erro ao remover dedução", "error");
+    }
+  };
+
+  // Função helper para obter data
+  const getDateFromField = (dateField) => {
+    try {
+      // Se for um Timestamp do Firestore
+      if (dateField && typeof dateField.toDate === "function") {
+        return dateField.toDate();
+      }
+      // Se for uma string de data
+      if (typeof dateField === "string") {
+        return new Date(dateField);
+      }
+      // Se já for um objeto Date
+      if (dateField instanceof Date) {
+        return dateField;
+      }
+      // Caso não seja possível determinar a data
+      return new Date();
+    } catch (error) {
+      console.error("Erro ao processar data:", error);
+      return new Date();
     }
   };
 
@@ -583,7 +606,7 @@ const SalaryManager = ({
             <div className="deductions-list">
               {salaryDeductions
                 .filter((d) => {
-                  const deductionDate = d.date?.toDate() || new Date();
+                  const deductionDate = getDateFromField(d.date);
                   return (
                     deductionDate.getMonth() === new Date().getMonth() &&
                     deductionDate.getFullYear() === new Date().getFullYear()

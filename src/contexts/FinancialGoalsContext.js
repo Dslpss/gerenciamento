@@ -152,12 +152,18 @@ export const FinancialGoalsProvider = ({ children }) => {
       const userRef = doc(db, "users", currentUser.uid);
       const advanceRef = collection(userRef, "salaryAdvances");
 
+      // Corrigir problema com a data
+      let dateToUse = new Date(advanceData.expectedDate);
+
+      // Manter a data exata como inserida pelo usuário
       const newAdvance = {
         ...advanceData,
         createdAt: serverTimestamp(),
         userId: currentUser.uid,
         status: "pending",
-        expectedDate: advanceData.expectedDate || null,
+        // Salvar a data como uma string no formato YYYY-MM-DD para evitar problemas de fuso horário
+        expectedDate: dateToUse.toISOString().split("T")[0],
+        requestedAt: serverTimestamp(),
       };
 
       const docRef = await addDoc(advanceRef, newAdvance);
@@ -174,28 +180,26 @@ export const FinancialGoalsProvider = ({ children }) => {
       const userRef = doc(db, "users", currentUser.uid);
       const advanceRef = doc(collection(userRef, "salaryAdvances"), advanceId);
 
-      // Buscar o vale atual
       const advance = salaryAdvances.find((adv) => adv.id === advanceId);
       if (!advance) return;
 
-      // Registrar a data de recebimento
-      const receivedAt = serverTimestamp();
+      // Criar uma data local em formato string para evitar problemas de fuso horário
+      const now = new Date();
+      const localDateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
 
-      // Atualizar o status do vale
       await updateDoc(advanceRef, {
         status: "received",
-        receivedAt: receivedAt,
+        receivedAt: localDateStr,
       });
 
-      // Registrar a dedução do salário
       const salaryDeductionsRef = collection(userRef, "salaryDeductions");
       await addDoc(salaryDeductionsRef, {
         amount: advance.amount,
         type: "salaryAdvance",
         description: "Vale salarial",
-        date: receivedAt,
+        date: localDateStr,
         advanceId: advanceId,
-        createdAt: receivedAt,
+        createdAt: serverTimestamp(),
       });
     } catch (error) {
       console.error("Erro ao confirmar vale:", error);
