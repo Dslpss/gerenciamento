@@ -10,8 +10,10 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  getDocs,
 } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
+import logger from "../utils/logger"; // Adicionar importação do logger
 
 const FinancialGoalsContext = createContext();
 
@@ -20,6 +22,7 @@ export const FinancialGoalsProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const { currentUser } = useAuth();
   const [salaryAdvances, setSalaryAdvances] = useState([]);
+  const [vales, setVales] = useState([]); // Adicionar estado para vales
 
   // Carregar metas do Firebase
   useEffect(() => {
@@ -57,7 +60,6 @@ export const FinancialGoalsProvider = ({ children }) => {
           ...doc.data(),
         }));
         setSalaryAdvances(advances);
-        console.log("Vales carregados:", advances);
       },
       (error) => {
         console.error("Erro ao carregar vales:", error);
@@ -246,6 +248,26 @@ export const FinancialGoalsProvider = ({ children }) => {
     }
   };
 
+  const loadVales = async () => {
+    if (!currentUser) return;
+
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      const valesRef = collection(userRef, "vales");
+      const valesSnapshot = await getDocs(valesRef);
+
+      const valesData = valesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      logger.debug("Dados atualizados"); // Log genérico sem informações sensíveis
+      setVales(valesData);
+    } catch (error) {
+      logger.error("Erro ao carregar dados");
+    }
+  };
+
   const value = {
     goals,
     loading,
@@ -260,6 +282,8 @@ export const FinancialGoalsProvider = ({ children }) => {
     updateSalaryAdvance,
     deleteSalaryAdvance,
     removeSalaryDeduction,
+    vales, // Adicionar vales ao contexto
+    loadVales, // Adicionar função de carregamento ao contexto
   };
 
   return (

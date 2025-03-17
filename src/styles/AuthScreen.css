@@ -1,0 +1,410 @@
+/* Estilo base da tela de autenticação com tema financeiro */
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Padrão financeiro no fundo com números */
+.auth-screen::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px
+    ),
+    radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px, 30px 30px;
+  top: 0;
+  left: 0;
+  opacity: 0.5;
+}
+
+/* Números financeiros flutuantes */
+.auth-screen::after {
+  content: "$";
+  font-size: 80px;
+  position: absolute;
+  color: rgba(255, 255, 255, 0.05);
+  z-index: 0;
+  right: 10%;
+  top: 20%;
+}
+
+/* Adicionar elementos numéricos no fundo */
+.auth-screen .number-elements {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.auth-screen .number-element {
+  position: absolute;
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.1);
+  z-index: 1;
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  user-select: none;
+}
+
+.auth-screen .number-1 {
+  top: 15%;
+  left: 10%;
+  transform: rotate(-15deg);
+}
+
+.auth-screen .number-2 {
+  top: 35%;
+  right: 15%;
+  font-size: 32px;
+  transform: rotate(25deg);
+}
+
+.auth-screen .number-3 {
+  bottom: 20%;
+  left: 20%;
+  font-size: 28px;
+}
+
+.auth-screen .number-4 {
+  top: 60%;
+  right: 25%;
+  transform: rotate(-10deg);
+}
+
+.auth-screen .number-5 {
+  bottom: 30%;
+  right: 30%;
+  font-size: 24px;
+  transform: rotate(15deg);
+}
+
+/* Gráfico financeiro */
+.auth-screen .chart-element {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 25%;
+  background-image: linear-gradient(
+    to top,
+    rgba(59, 130, 246, 0.2),
+    transparent
+  );
+  clip-path: polygon(
+    0 50%,
+    5% 40%,
+    10% 55%,
+    15% 45%,
+    20% 60%,
+    25% 35%,
+    30% 55%,
+    35% 30%,
+    40% 45%,
+    45% 25%,
+    50% 40%,
+    55% 20%,
+    60% 40%,
+    65% 15%,
+    70% 30%,
+    75% 45%,
+    80% 20%,
+    85% 50%,
+    90% 40%,
+    95% 60%,
+    100% 30%,
+    100% 100%,
+    0 100%
+  );
+}
+
+/* Container principal com elementos financeiros */
+.auth-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  transform: translateY(0);
+  transition: transform 0.3s;
+  z-index: 10;
+}
+
+.auth-container:hover {
+  transform: translateY(-5px);
+}
+
+/* Título com tema azul */
+.auth-screen-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  background: linear-gradient(45deg, #1e3a8a, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  letter-spacing: -0.5px;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.auth-screen-title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(to right, #1e3a8a, #3b82f6);
+  border-radius: 2px;
+}
+
+.auth-screen-subtitle {
+  color: #64748b;
+  font-size: 1.1rem;
+  text-align: center;
+  margin-top: 5px;
+  margin-bottom: 25px;
+  line-height: 1.6;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+/* Decoração do logo container com símbolo $ - renomeado para evitar conflito */
+.auth-logo-container {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-logo-container::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 25%;
+  width: 50%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    rgba(30, 58, 138, 0.1),
+    rgba(59, 130, 246, 0.6),
+    rgba(30, 58, 138, 0.1)
+  );
+}
+
+/* Formulário de login */
+.login-form {
+  margin-top: 1rem;
+}
+
+.login-form h2 {
+  font-size: 1.5rem;
+  color: #1e40af;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #4b5563;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.form-group input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Estilos para o container de input de senha */
+.password-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.password-toggle-btn:hover {
+  color: #1e40af;
+}
+
+/* Ajustar padding do input de senha para acomodar o botão */
+.password-input-container input {
+  padding-right: 40px;
+}
+
+/* Botões com tema azul */
+.primary-button {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(45deg, #1e3a8a, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Links com cores azuis */
+.text-button {
+  color: #1e40af;
+  font-size: 0.95rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.text-button:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* Área de criar conta */
+.create-account {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid rgba(59, 130, 246, 0.1);
+  text-align: center;
+}
+
+.create-account p {
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+/* Mensagens de erro */
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  animation: slideIn 0.3s ease;
+}
+
+.alert-danger {
+  background-color: #fee2e2;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+}
+
+/* Animações */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 2rem;
+  }
+
+  .auth-screen-title {
+    font-size: 1.8rem;
+  }
+
+  .auth-screen-subtitle {
+    font-size: 1rem;
+  }
+
+  .primary-button {
+    padding: 0.875rem;
+  }
+}

@@ -6,6 +6,7 @@ const Login = ({ onSuccess, onCreateAccount, onForgotPassword }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -37,6 +38,10 @@ const Login = ({ onSuccess, onCreateAccount, onForgotPassword }) => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="login-form">
       <h2>Entrar</h2>
@@ -57,13 +62,24 @@ const Login = ({ onSuccess, onCreateAccount, onForgotPassword }) => {
 
         <div className="form-group">
           <label htmlFor="password">Senha</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="password-input-container">
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle-btn"
+              onClick={togglePasswordVisibility}>
+              <i
+                className={`fas ${
+                  showPassword ? "fa-eye-slash" : "fa-eye"
+                }`}></i>
+            </button>
+          </div>
           <div className="forgot-password-link">
             <button
               type="button"

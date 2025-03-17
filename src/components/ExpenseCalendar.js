@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useExpenses } from "../contexts/ExpenseContext";
 import "../styles/ExpenseCalendar.css";
 import { parseLocalDate } from "../utils/dateUtils";
+import logger from "../utils/logger";
 
 const ExpenseCalendar = ({ onDayClick, filters }) => {
   const { expenses } = useExpenses();
@@ -108,15 +109,11 @@ const ExpenseCalendar = ({ onDayClick, filters }) => {
         const expenseDay = expenseDate.getDate();
 
         // Debug para verificar processamento de datas
-        console.debug(
+        logger.debug(
           "Processando despesa:",
           expense.description,
-          "Data original:",
-          expense.date,
-          "Data processada:",
-          expenseDate.toLocaleDateString("pt-BR"),
-          "Dia:",
-          expenseDay
+          "Data:",
+          expense.date
         );
 
         // Verificar se a despesa é do mês/ano exibido

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useFinancialGoals } from "../contexts/FinancialGoalsContext";
 import "../styles/SalaryAdvanceManager.css";
+import logger from "../utils/logger";
 
 const SalaryAdvanceManager = ({ salary }) => {
   const [showForm, setShowForm] = useState(false);
@@ -20,12 +21,27 @@ const SalaryAdvanceManager = ({ salary }) => {
     salaryAdvances,
     updateSalaryAdvance,
     deleteSalaryAdvance,
+    loadVales, // Adicionar loadVales aqui
   } = useFinancialGoals();
 
-  // Efeito para carregar os vales
+  // Efeito para carregar os vales (remover o console.log)
   useEffect(() => {
-    console.log("Vales carregados:", salaryAdvances);
+    // Remover log de dados sensíveis
+    logger.debug("Atualizando status dos adiantamentos");
   }, [salaryAdvances]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await loadVales();
+        logger.debug("Carregamento concluído");
+      } catch (error) {
+        logger.error("Erro no carregamento");
+      }
+    };
+
+    loadData();
+  }, [loadVales]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

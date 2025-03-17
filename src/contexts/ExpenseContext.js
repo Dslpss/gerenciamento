@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  Timestamp, // Adicionar esta importação
 } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
 
@@ -123,49 +124,102 @@ export const ExpenseProvider = ({ children }) => {
     loadExtraIncomes();
   }, [currentUser]);
 
+  // Função para adicionar despesa
   const addExpense = async (expenseData) => {
     try {
-      if (!currentUser) throw new Error("Usuário não autenticado");
+      console.log("Salvando despesa:", expenseData);
+      setLoading(true);
 
-      const expensesRef = collection(
-        db, // Usando a referência correta ao db
-        "users",
-        currentUser.uid,
-        "expenses"
+      // Adicionar ao Firestore
+      const docRef = await addDoc(
+        collection(db, "users", currentUser.uid, "expenses"),
+        {
+          ...expenseData,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
       );
 
-      // Dados com timestamp do servidor para melhor consistência
-      const newExpenseData = {
-        ...expenseData,
-        createdAt: serverTimestamp(),
-        userId: currentUser.uid,
-        // Adicionar campos que garantem persistência adequada
-        date: expenseData.date,
-        amount: Number(expenseData.amount), // Garantir que seja número
-        description: expenseData.description || "",
-        category: expenseData.category || "Outros",
-      };
-
-      const docRef = await addDoc(expensesRef, newExpenseData);
       console.log("Despesa salva no Firestore com ID:", docRef.id);
 
-      // Atualizar estado local imediatamente para feedback instantâneo
-      const newExpense = {
-        id: docRef.id, // Usar o ID gerado pelo Firestore
-        ...newExpenseData,
-        createdAt: new Date().toISOString(), // Usar data local para preview até que o Firestore sincronize
-      };
+      // Importante: Não adicionar a despesa diretamente ao estado
+      // Em vez disso, confiar no listener do Firestore para atualizar o estado
+      // Isso evitará duplicações quando o listener for acionado
 
-      // Atualizar estado local para interface responder imediatamente
-      setExpenses((currentExpenses) => [...currentExpenses, newExpense]);
-      setLastUpdate(Date.now());
-
-      return docRef;
+      return docRef.id;
     } catch (error) {
       console.error("Erro ao adicionar despesa:", error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Carregar despesas - simplificar a consulta para evitar necessidade de índice
+  useEffect(() => {
+    if (!currentUser) {
+      setExpenses([]);
+      return;
+    }
+
+    const expensesRef = collection(db, "users", currentUser.uid, "expenses");
+    // Usar apenas um campo de ordenação para evitar a necessidade de índice composto
+    const q = query(expensesRef, orderBy("date", "desc"));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const expensesData = [];
+        const processedIds = new Set();
+
+        snapshot.forEach((doc) => {
+          const id = doc.id;
+
+          if (!processedIds.has(id)) {
+            processedIds.add(id);
+
+            const data = doc.data();
+            const createdAt =
+              data.createdAt instanceof Timestamp
+                ? data.createdAt.toDate().toISOString()
+                : data.createdAt || new Date().toISOString();
+
+            const updatedAt =
+              data.updatedAt instanceof Timestamp
+                ? data.updatedAt.toDate().toISOString()
+                : data.updatedAt || new Date().toISOString();
+
+            expensesData.push({
+              id,
+              ...data,
+              createdAt,
+              updatedAt,
+            });
+          }
+        });
+
+        // Se precisar de ordenação secundária, podemos fazer isso no cliente
+        expensesData.sort((a, b) => {
+          // Primeiro comparar por data
+          const dateComparison = b.date.localeCompare(a.date);
+          if (dateComparison !== 0) return dateComparison;
+
+          // Se as datas forem iguais, ordenar por createdAt
+          return b.createdAt.localeCompare(a.createdAt);
+        });
+
+        console.log("Despesas carregadas do Firestore:", expensesData.length);
+        setExpenses(expensesData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Erro ao carregar despesas:", error);
+        setLoading(false);
+      }
+    );
+
+    return unsubscribe;
+  }, [currentUser]);
 
   const updateExpense = async (id, updatedData) => {
     try {

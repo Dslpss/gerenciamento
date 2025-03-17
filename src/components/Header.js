@@ -115,7 +115,7 @@ const Header = () => {
         <div className="header-left">
           <div className="logo-container">
             <i className="fas fa-chart-line logo-icon"></i>
-            <h1 className="app-title">FinanSmart</h1>
+            <h1 className="header-brand-title">FinanSmart</h1>
           </div>
         </div>
 

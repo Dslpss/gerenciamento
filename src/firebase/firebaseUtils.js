@@ -18,6 +18,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
+import logger from "../utils/logger";
 
 // Funções relacionadas à autenticação
 export const criarUsuario = async (email, senha) => {
@@ -195,14 +196,13 @@ export const initializeUserData = async (userId) => {
 // Função para carregar dados iniciais do usuário - Versão Melhorada
 export const carregarDadosIniciais = async (userId) => {
   if (!userId) {
-    console.error("ID de usuário não fornecido para carregarDadosIniciais");
+    logger.error("ID de usuário não fornecido");
     throw new Error("ID de usuário não fornecido");
   }
 
   try {
-    console.log("Carregando dados iniciais para o usuário:", userId);
+    logger.debug("Iniciando carregamento de dados");
 
-    // Dados padrão a retornar caso não haja dados
     let dados = {
       salario: 0,
       monthlySalaries: {},
@@ -210,15 +210,13 @@ export const carregarDadosIniciais = async (userId) => {
       expenses: [],
     };
 
-    // Tentar carregar de userData primeiro
     try {
       const userDataRef = doc(db, "userData", userId);
       const userDataSnapshot = await getDoc(userDataRef);
 
       if (userDataSnapshot.exists()) {
         const userDataFromDb = userDataSnapshot.data();
-        console.log("Dados encontrados em userData:", userDataFromDb);
-
+        logger.debug("Dados de usuário encontrados"); // Log genérico
         dados = {
           ...dados,
           salario: userDataFromDb.salario || userDataFromDb.defaultSalary || 0,
@@ -227,7 +225,7 @@ export const carregarDadosIniciais = async (userId) => {
         };
       }
     } catch (error) {
-      console.warn("Erro ao carregar de userData:", error.message);
+      logger.warn("Erro ao carregar dados do usuário");
     }
 
     // Tentar carregar de salaries se não encontrou ou para complementar
@@ -238,7 +236,7 @@ export const carregarDadosIniciais = async (userId) => {
 
         if (salarySnapshot.exists()) {
           const salaryData = salarySnapshot.data();
-          console.log("Dados encontrados em salaries:", salaryData);
+          logger.info("Dados encontrados em salaries:", salaryData);
 
           dados = {
             ...dados,
@@ -261,7 +259,7 @@ export const carregarDadosIniciais = async (userId) => {
 
         if (userSalarySnapshot.exists()) {
           const salaryData = userSalarySnapshot.data();
-          console.log("Dados encontrados em users/.../salaryData:", salaryData);
+          logger.info("Dados encontrados em users/.../salaryData:", salaryData);
 
           dados = {
             ...dados,
@@ -281,7 +279,7 @@ export const carregarDadosIniciais = async (userId) => {
       Object.keys(dados.monthlySalaries).length === 0
     ) {
       try {
-        console.log(
+        logger.info(
           "Nenhum dado encontrado. Criando estrutura inicial para o usuário."
         );
 
@@ -312,7 +310,7 @@ export const carregarDadosIniciais = async (userId) => {
           { merge: true }
         );
 
-        console.log("Estrutura inicial de dados criada com sucesso");
+        logger.info("Estrutura inicial de dados criada com sucesso");
       } catch (initError) {
         console.error("Erro ao criar estrutura inicial:", initError);
         // Não lançar erro aqui, apenas continuar com os valores padrão
@@ -333,10 +331,10 @@ export const carregarDadosIniciais = async (userId) => {
       console.warn("Erro ao registrar login:", loginError.message);
     }
 
-    console.log("Dados carregados finais:", dados);
+    logger.debug("Carregamento de dados concluído");
     return dados;
   } catch (error) {
-    console.error("Erro ao carregar dados iniciais:", error);
+    logger.error("Erro no carregamento de dados");
     throw error;
   }
 };

@@ -66,6 +66,7 @@ const ExpenseList = ({ onEdit, filters }) => {
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  // Usar currentItems em vez de filteredExpenses diretamente para paginação
   const currentItems = filteredExpenses.slice(
     indexOfFirstItem,
     indexOfLastItem
@@ -200,81 +201,73 @@ const ExpenseList = ({ onEdit, filters }) => {
     );
   };
 
-  // Renderizar item de despesa no modo compacto
-  const renderCompactItem = (expense) => (
-    <div
-      key={expense.id}
-      className={`expense-item compact ${
-        confirmDelete === expense.id ? "confirm-delete" : ""
-      }`}>
-      <div className="expense-content">
-        <div className="expense-info">
-          <strong>{expense.description}</strong>
-          <div className="meta-info">
-            <span
-              className="compact-category"
-              style={{
-                backgroundColor: getCategoryColor(expense.category),
-                color: getContrastColor(getCategoryColor(expense.category)),
-              }}>
-              {expense.category}
-            </span>
-            <span>{formatAmount(expense.amount)}</span>
-            <span>{formatDate(expense.date)}</span>
-          </div>
-        </div>
-        <div className="expense-actions">
-          <button
-            className="action-button edit-button"
-            onClick={() => handleEdit(expense)}
-            aria-label="Editar">
-            ✎
-          </button>
-          <button
-            className="action-button delete-button"
-            onClick={() => handleDelete(expense.id)}
-            aria-label="Excluir">
-            {confirmDelete === expense.id ? "✓" : "X"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  // Função para renderizar cada despesa
+  const renderExpenses = () => {
+    // Usar um Set para monitorar IDs já renderizados
+    const renderedIds = new Set();
 
-  // Renderizar item de despesa no modo normal
-  const renderNormalItem = (expense) => (
-    <div
-      key={expense.id}
-      className={`expense-item ${
-        confirmDelete === expense.id ? "confirm-delete" : ""
-      }`}>
-      <div className="expense-details">
-        <h3>{expense.description}</h3>
-        <p>
-          <span
-            className="category-tag"
-            style={{
-              backgroundColor: getCategoryColor(expense.category),
-              color: getContrastColor(getCategoryColor(expense.category)),
-            }}>
-            {expense.category}
-          </span>
-          <span className="date-info">{formatDate(expense.date)}</span>
-        </p>
-      </div>
-      <div className="expense-amount-actions">
-        <div className="amount">{formatAmount(expense.amount)}</div>
-        <div className="actions">
-          <button className="edit" onClick={() => handleEdit(expense)}>
-            Editar
-          </button>
-          <button className="delete" onClick={() => handleDelete(expense.id)}>
-            {confirmDelete === expense.id ? "Confirmar" : "Excluir"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    return currentItems
+      .map((expense) => {
+        // Se já renderizamos este ID, pular
+        if (renderedIds.has(expense.id)) {
+          console.warn(`Despesa duplicada detectada, ID: ${expense.id}`);
+          return null;
+        }
+
+        // Adicionar ID ao conjunto de IDs renderizados
+        renderedIds.add(expense.id);
+
+        const categoryColor = getCategoryColor(expense.category);
+        const textColor = getContrastColor(categoryColor);
+
+        return (
+          <div
+            key={expense.id}
+            className={`expense-item ${
+              viewMode === "compact" ? "compact" : ""
+            }`}
+            data-category={expense.category}>
+            <div className="expense-main-info">
+              <div className="expense-description">{expense.description}</div>
+              <div className="expense-amount">
+                {formatAmount(expense.amount)}
+              </div>
+            </div>
+
+            <div className="expense-details">
+              <div className="expense-date">{formatDate(expense.date)}</div>
+              <div
+                className="expense-category"
+                style={{ backgroundColor: categoryColor, color: textColor }}>
+                {expense.category}
+              </div>
+            </div>
+
+            <div className="expense-actions">
+              <button
+                onClick={() => handleEdit(expense)}
+                className="edit-button"
+                aria-label="Editar">
+                <i className="fas fa-edit"></i>
+              </button>
+              <button
+                onClick={() => handleDelete(expense.id)}
+                className={`delete-button ${
+                  confirmDelete === expense.id ? "confirm" : ""
+                }`}
+                aria-label="Excluir">
+                {confirmDelete === expense.id ? (
+                  <i className="fas fa-check"></i>
+                ) : (
+                  <i className="fas fa-trash"></i>
+                )}
+              </button>
+            </div>
+          </div>
+        );
+      })
+      .filter(Boolean);
+  };
 
   if (loading) {
     return <LoadingIndicator />;
@@ -342,34 +335,25 @@ const ExpenseList = ({ onEdit, filters }) => {
         </div>
       </div>
 
-      {filteredExpenses.length === 0 ? (
-        <div className="empty-state">
-          <p>Nenhum gasto encontrado.</p>
-          {searchTerm && (
-            <p>Tente ajustar sua pesquisa ou limpar os filtros.</p>
-          )}
+      <div className="expense-list">
+        {loading ? (
+          <div className="loading-indicator">Carregando...</div>
+        ) : filteredExpenses.length > 0 ? (
+          renderExpenses()
+        ) : (
+          <div className="no-expenses">Nenhuma despesa encontrada.</div>
+        )}
+      </div>
+
+      {renderPagination()}
+
+      <div className="list-footer">
+        <div className="showing-info">
+          Mostrando {indexOfFirstItem + 1} a{" "}
+          {Math.min(indexOfLastItem, filteredExpenses.length)} de{" "}
+          {filteredExpenses.length} gastos
         </div>
-      ) : (
-        <>
-          <div className={`expenses-list ${viewMode}`}>
-            {currentItems.map((expense) =>
-              viewMode === "compact"
-                ? renderCompactItem(expense)
-                : renderNormalItem(expense)
-            )}
-          </div>
-
-          {renderPagination()}
-
-          <div className="list-footer">
-            <div className="showing-info">
-              Mostrando {indexOfFirstItem + 1} a{" "}
-              {Math.min(indexOfLastItem, filteredExpenses.length)} de{" "}
-              {filteredExpenses.length} gastos
-            </div>
-          </div>
-        </>
-      )}
+      </div>
     </div>
   );
 };

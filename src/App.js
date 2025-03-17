@@ -22,6 +22,7 @@ import DashboardSummary from "./components/DashboardSummary";
 import ExpenseCalendar from "./components/ExpenseCalendar";
 import { FinancialGoalsProvider } from "./contexts/FinancialGoalsContext";
 import FinancialGoals from "./components/FinancialGoals";
+import logger from "./utils/logger";
 
 function AppContent() {
   const { currentUser } = useAuth();
@@ -44,19 +45,19 @@ function AppContent() {
       if (!currentUser) return;
 
       try {
-        console.log("Iniciando carregamento de dados para", currentUser.email);
+        logger.debug("Iniciando carregamento");
         const dados = await carregarDadosIniciais(currentUser.uid);
 
         if (dados.salario !== undefined) {
           setSalary(dados.salario);
-          console.log("Salário carregado:", dados.salario);
+          logger.debug("Dados atualizados");
         }
 
         setMonthlySalaries(dados.monthlySalaries || {});
         setSalaryHistory(dados.salaryHistory || []);
-        console.log("Dados de salário carregados com sucesso");
+        logger.debug("Configuração concluída");
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        logger.error("Erro no carregamento");
       }
     };
 
@@ -66,19 +67,17 @@ function AppContent() {
   // Salvar dados quando alterados
   useEffect(() => {
     if (!currentUser) return;
-
     try {
-      console.log("Salvando salary:", salary);
+      logger.debug("Salvando dados");
       saveToLocalStorage("salary", salary);
     } catch (error) {
-      console.error("Erro ao salvar salary:", error);
+      logger.error("Erro ao salvar");
     }
-    // Adicionando currentUser às dependências
   }, [salary, currentUser]);
 
   useEffect(() => {
     try {
-      console.log("Salvando monthlySalaries:", monthlySalaries);
+      logger.debug("Salvando monthlySalaries:", monthlySalaries);
       saveToLocalStorage("monthlySalaries", monthlySalaries);
     } catch (error) {
       console.error("Erro ao salvar monthlySalaries:", error);
@@ -87,12 +86,21 @@ function AppContent() {
 
   useEffect(() => {
     try {
-      console.log("Salvando salaryHistory:", salaryHistory);
+      logger.debug("Salvando salaryHistory:", salaryHistory);
       saveToLocalStorage("salaryHistory", salaryHistory);
     } catch (error) {
       console.error("Erro ao salvar salaryHistory:", error);
     }
   }, [salaryHistory]);
+
+  useEffect(() => {
+    try {
+      logger.debug("Atualizando configurações"); // Log genérico
+      saveToLocalStorage("monthlySalaries", monthlySalaries);
+    } catch (error) {
+      logger.error("Erro ao salvar configurações");
+    }
+  }, [monthlySalaries]);
 
   // Atualizar o salário padrão
   const updateSalary = async (newSalary) => {
@@ -101,7 +109,7 @@ function AppContent() {
         throw new Error("Usuário não autenticado");
       }
 
-      console.log("Atualizando salário para:", newSalary);
+      logger.info("Atualizando salário para:", newSalary);
 
       // Atualizar estado local primeiro
       setSalary(newSalary);
@@ -127,10 +135,10 @@ function AppContent() {
           { merge: true }
         );
 
-        console.log("Salário atualizado com sucesso no Firestore");
+        logger.info("Salário atualizado com sucesso no Firestore");
       } catch (firebaseError) {
         console.warn("Falha ao salvar no Firebase:", firebaseError);
-        console.log("Salário atualizado apenas localmente");
+        logger.info("Salário atualizado apenas localmente");
         // Continuamos com o estado local atualizado mesmo com falha no Firebase
       }
     } catch (error) {
@@ -146,7 +154,7 @@ function AppContent() {
         throw new Error("Usuário não autenticado");
       }
 
-      console.log("Atualizando dia do pagamento para:", day);
+      logger.info("Atualizando dia do pagamento para:", day);
 
       // Atualizar estado local primeiro
       setSalaryDay(day);
@@ -160,10 +168,10 @@ function AppContent() {
           salaryHistory,
         });
 
-        console.log("Dia do pagamento atualizado com sucesso no Firestore");
+        logger.info("Dia do pagamento atualizado com sucesso no Firestore");
       } catch (firebaseError) {
         console.warn("Falha ao salvar no Firebase:", firebaseError);
-        console.log("Dia do pagamento atualizado apenas localmente");
+        logger.info("Dia do pagamento atualizado apenas localmente");
       }
     } catch (error) {
       console.error("Erro ao atualizar dia do pagamento:", error);
